@@ -1,0 +1,37 @@
+{
+  "name": "cueron-partner-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cueron Partner Agency Management Platform - B2B service coordination system",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "build": "pnpm --filter web build",
+    "build:mobile": "pnpm --filter mobile build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "pnpm -r type-check",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

@@ -1,0 +1,271 @@
+'use client';
+
+/**
+ * Payment Settings Component
+ * 
+ * Interface for managing payment-related settings including
+ * viewing payment history and configuring payment preferences.
+ * 
+ * Requirements: 11.1
+ */
+
+import { useState, useEffect } from 'react';
+
+interface PaymentSummary {
+  total_payments: number;
+  pending_amount: number;
+  completed_amount: number;
+  last_payment_date?: string;
+}
+
+interface RecentPayment {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  paid_at?: string;
+}
+
+export function PaymentSettings() {
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<PaymentSummary | null>(null);
+  const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // TODO: Get agency ID from auth context
+  const agencyId = 'current-agency-id';
+
+  useEffect(() => {
+    loadPaymentData();
+  }, []);
+
+  const loadPaymentData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/agencies/${agencyId}/payments`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load payment data');
+      }
+
+      const data = await response.json();
+      
+      // Calculate summary
+      const summary: PaymentSummary = {
+        total_payments: data.payments?.length || 0,
+        pending_amount: data.payments?.filter((p: any) => p.status === 'pending')
+          .reduce((sum: number, p: any) => sum + p.amount, 0) || 0,
+        completed_amount: data.payments?.filter((p: any) => p.status === 'completed')
+          .reduce((sum: number, p: any) => sum + p.amount, 0) || 0,
+        last_payment_date: data.payments?.find((p: any) => p.paid_at)?.paid_at,
+      };
+      
+      setSummary(summary);
+      setRecentPayments(data.payments?.slice(0, 5) || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load payment data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Payment Summary */}
+      {summary && (
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="text-sm text-blue-600 mb-1">Total Payments</div>
+              <div className="text-2xl font-bold text-blue-900">{summary.total_payments}</div>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="text-sm text-yellow-600 mb-1">Pending Amount</div>
+              <div className="text-2xl font-bold text-yellow-900">
+                {formatCurrency(summary.pending_amount)}
+              </div>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="text-sm text-green-600 mb-1">Completed Amount</div>
+              <div className="text-2xl font-bold text-green-900">
+                {formatCurrency(summary.completed_amount)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Payments */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Recent Payments</h3>
+          <a
+            href="/dashboard/payments"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            View All →
+          </a>
+        </div>
+
+        {recentPayments.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">No payment records found</p>
+          </div>
+        ) : (
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentPayments.map((payment) => (
+                  <tr key={payment.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {payment.invoice_number || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(payment.status)}`}>
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(payment.paid_at || payment.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Payment Method Info */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Information</h3>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+          <div>
+            <span className="text-sm text-gray-600">Payment Gateway:</span>
+            <p className="font-medium">Razorpay</p>
+          </div>
+          <div>
+            <span className="text-sm text-gray-600">Payment Terms:</span>
+            <p className="font-medium">Net 30 days from job completion</p>
+          </div>
+          <div>
+            <span className="text-sm text-gray-600">Supported Methods:</span>
+            <p className="font-medium">Bank Transfer, UPI, Credit/Debit Card</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bank Account Info */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Account</h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            Your bank account details are configured in the Agency Profile settings.
+            Payments will be processed to the registered bank account.
+          </p>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              // Switch to profile tab
+              const profileTab = document.querySelector('[data-tab="profile"]') as HTMLButtonElement;
+              profileTab?.click();
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium mt-2 inline-block"
+          >
+            Update Bank Details →
+          </a>
+        </div>
+      </div>
+
+      {/* Help Section */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Need Help?</h3>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm text-gray-700 mb-3">
+            For payment-related queries or issues, please contact our support team:
+          </p>
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="text-gray-600">Email:</span>
+              <a href="mailto:payments@cueron.com" className="text-blue-600 hover:text-blue-800 ml-2">
+                payments@cueron.com
+              </a>
+            </div>
+            <div>
+              <span className="text-gray-600">Phone:</span>
+              <a href="tel:+911234567890" className="text-blue-600 hover:text-blue-800 ml-2">
+                +91 123 456 7890
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

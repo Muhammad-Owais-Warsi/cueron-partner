@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Cueron Engineer",
+    "slug": "cueron-engineer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cueron.engineer",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to track job progress and help you navigate to service sites.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track job progress even when the app is in the background.",
+        "NSCameraUsageDescription": "We need camera access to capture before and after photos of service work.",
+        "NSPhotoLibraryUsageDescription": "We need photo library access to save service photos.",
+        "NSUserNotificationsUsageDescription": "We need notification permissions to send you job assignments and updates."
+      },
+      "config": {
+        "googleMapsApiKey": "process.env.GOOGLE_MAPS_API_KEY"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.cueron.engineer",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "process.env.GOOGLE_MAPS_API_KEY"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Cueron to use your location for job tracking."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ]
+    ],
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#1976d2",
+      "androidMode": "default",
+      "androidCollapsedTitle": "Cueron"
+    }
+  }
+}
