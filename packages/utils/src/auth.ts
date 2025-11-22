@@ -184,33 +184,6 @@ export function deserializeSession(data: string): Session | null {
 
 /**
  * Role-based access control helpers
+ * NOTE: These are deprecated - use functions from authorization.ts instead
  */
 export type UserRole = 'admin' | 'manager' | 'viewer' | 'engineer';
-
-export function hasPermission(
-  userRole: UserRole,
-  requiredRole: UserRole
-): boolean {
-  const roleHierarchy: Record<UserRole, number> = {
-    admin: 3,
-    manager: 2,
-    viewer: 1,
-    engineer: 0,
-  };
-  
-  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
-}
-
-/**
- * Check if user can perform write operations
- */
-export function canWrite(userRole: UserRole): boolean {
-  return userRole === 'admin' || userRole === 'manager';
-}
-
-/**
- * Check if user can perform admin operations
- */
-export function isAdmin(userRole: UserRole): boolean {
-  return userRole === 'admin';
-}
