@@ -18,7 +18,9 @@
     "type-check": "pnpm -r type-check",
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
-    "clean": "pnpm -r clean && rm -rf node_modules"
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "setup-mock-data": "node add-mock-data-remote.js",
+    "create-mock-user": "node create-mock-user-account.js"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
@@ -33,5 +35,10 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.15.0"
+  "packageManager": "pnpm@8.15.0",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.83.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  }
 }

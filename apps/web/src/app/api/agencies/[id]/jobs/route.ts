@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { 
   assertPermission, 
   assertAgencyAccess
@@ -268,7 +268,7 @@ export async function GET(
     }
 
     // Execute query to get jobs
-    const { data: jobs, error: fetchError, count } = await query;
+    const { data: jobs, error: fetchError } = await query;
 
     if (fetchError) {
       console.error('Error fetching jobs:', fetchError);
@@ -325,9 +325,9 @@ export async function GET(
 
     // Sort by urgency and scheduled time (Property 13: Job list sorting)
     // Requirements 3.3: Jobs sorted by urgency and scheduled time
-    filteredJobs.sort((a, b) => {
+    filteredJobs.sort((a: any, b: any) => {
       // First, sort by urgency priority
-      const urgencyDiff = URGENCY_PRIORITY[a.urgency] - URGENCY_PRIORITY[b.urgency];
+      const urgencyDiff = URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
       if (urgencyDiff !== 0) {
         return urgencyDiff;
       }

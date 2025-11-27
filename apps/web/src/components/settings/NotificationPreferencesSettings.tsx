@@ -10,9 +10,11 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import type { NotificationPreferences, NotificationType } from '@/lib/notifications/types';
 
 export function NotificationPreferencesSettings() {
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,10 +39,14 @@ export function NotificationPreferencesSettings() {
   });
 
   useEffect(() => {
-    loadPreferences();
-  }, []);
+    if (user) {
+      loadPreferences();
+    }
+  }, [user]);
 
   const loadPreferences = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       const response = await fetch('/api/notifications/preferences');
@@ -57,6 +63,11 @@ export function NotificationPreferencesSettings() {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      setError('User not authenticated');
+      return;
+    }
+    
     try {
       setSaving(true);
       setError(null);
@@ -120,10 +131,18 @@ export function NotificationPreferencesSettings() {
     },
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please log in to manage notification preferences.</p>
       </div>
     );
   }
@@ -200,24 +219,20 @@ export function NotificationPreferencesSettings() {
               className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
             >
               <div>
-                <div className="font-medium text-gray-900 text-sm">
-                  {notificationTypeLabels[type].label}
-                </div>
-                <div className="text-xs text-gray-600">
-                  {notificationTypeLabels[type].description}
-                </div>
+                <div className="font-medium text-gray-900">{notificationTypeLabels[type].label}</div>
+                <div className="text-sm text-gray-600">{notificationTypeLabels[type].description}</div>
               </div>
               <input
                 type="checkbox"
-                checked={preferences.notificationTypes[type] ?? false}
+                checked={preferences.notificationTypes[type]}
                 onChange={(e) => setPreferences(prev => ({
                   ...prev,
                   notificationTypes: {
                     ...prev.notificationTypes,
-                    [type]: e.target.checked,
-                  },
+                    [type]: e.target.checked
+                  }
                 }))}
-                className="h-4 w-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
             </label>
           ))}
@@ -229,7 +244,7 @@ export function NotificationPreferencesSettings() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Preferences'}
         </button>

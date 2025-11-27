@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UpdateAgencyInputSchema } from '@cueron/utils/src/schemas';
 import { encrypt, decrypt } from '@cueron/utils/src/encryption';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { 
   assertPermission, 
   assertAgencyAccess

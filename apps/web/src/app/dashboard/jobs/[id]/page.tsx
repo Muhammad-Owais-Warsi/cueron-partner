@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
-import { createClient } from '@/lib/supabase/client';
 
 function JobDetailPageContent() {
   const params = useParams();

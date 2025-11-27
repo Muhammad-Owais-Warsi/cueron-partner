@@ -35,7 +35,7 @@ function generateJobNumber(): string {
   return `JOB-${year}-${num}`;
 }
 
-function generateInvoiceNumber(): string {
+export function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
   const num = Math.floor(Math.random() * 10000)
     .toString()

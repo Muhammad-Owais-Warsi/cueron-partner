@@ -53,7 +53,7 @@ export function forbiddenResponse(message: string = 'Forbidden') {
 /**
  * Validate JWT token and get user
  */
-export async function validateAuth(request: NextRequest) {
+export async function validateAuth(_request: NextRequest) {
   const supabase = await createClient();
   
   const {

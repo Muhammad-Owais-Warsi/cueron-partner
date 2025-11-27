@@ -195,7 +195,7 @@ export const EngineerSchema = z.object({
 });
 
 export const CreateEngineerInputSchema = z.object({
-  agency_id: z.string().uuid(),
+  agency_id: z.string().uuid().optional(), // Made agency_id optional
   name: z.string().min(1, 'Name is required'),
   phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
   email: z.string().email().optional(),

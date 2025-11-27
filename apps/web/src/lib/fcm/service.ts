@@ -55,7 +55,7 @@ export class PushNotificationService {
       return [];
     }
 
-    return data?.map((row) => row.token) || [];
+    return data?.map((row: { token: string }) => row.token) || [];
   }
 
   /**
@@ -80,7 +80,7 @@ export class PushNotificationService {
       return [];
     }
 
-    return data?.map((row) => row.token) || [];
+    return data?.map((row: { token: string }) => row.token) || [];
   }
 
   /**
@@ -220,6 +220,7 @@ export class PushNotificationService {
   async handleFailedToken(token: string): Promise<void> {
     const { error } = await this.supabase
       .from('fcm_tokens')
+      // @ts-expect-error - fcm_tokens table exists but type inference fails
       .update({ is_active: false })
       .eq('token', token);
 

@@ -69,6 +69,7 @@ export class NotificationManager {
 
     const { error: insertError } = await this.supabase
       .from('notifications')
+      // @ts-expect-error - notifications table exists but type inference fails
       .insert(notifications);
 
     if (insertError) {
@@ -240,6 +241,7 @@ export class NotificationManager {
   async markAsRead(notificationId: string): Promise<void> {
     const { error } = await this.supabase
       .from('notifications')
+      // @ts-expect-error - notifications table exists but type inference fails
       .update({ read: true })
       .eq('id', notificationId);
 
@@ -255,6 +257,7 @@ export class NotificationManager {
   async markAllAsRead(userId: string): Promise<void> {
     const { error } = await this.supabase
       .from('notifications')
+      // @ts-expect-error - notifications table exists but type inference fails
       .update({ read: true })
       .eq('user_id', userId)
       .eq('read', false);

@@ -1,0 +1,44 @@
+INSTRUCTIONS FOR CREATING THE MOCK USER ACCOUNT
+
+Since you can't create users directly with SQL in Supabase, you need to create the user account through the Supabase Dashboard:
+
+1. Log in to your Supabase Dashboard
+   - Go to https://app.supabase.com/
+   - Log in with your credentials
+   - Select your project
+
+2. Create the user account
+   - In the left sidebar, click on "Authentication" → "Users"
+   - Click "New user"
+   - Enter the following details:
+     - Email: test@agency.com
+     - Password: password123
+     - User metadata (optional):
+       - name: Test User
+       - phone: 9876543210
+
+3. Confirm the user email
+   - After creating the user, you may need to confirm the email address
+   - Look for a "Confirm" button next to the user in the user list
+   - Click it to confirm the email address
+
+4. Verify the data
+   - Run the check-mock-data.sql script in your Supabase SQL editor
+   - This will show you if the mock data was inserted correctly
+
+5. Test the login
+   - Start your web application:
+     cd apps/web
+     pnpm dev
+   - Open your browser to http://localhost:3000
+   - Log in with:
+     - Email: test@agency.com
+     - Password: password123
+
+If you're still having issues after following these steps, please check:
+
+1. That all the SQL commands in insert-mock-data.sql ran successfully
+2. That the user account was created and confirmed in the Supabase Dashboard
+3. That your environment variables in apps/web/.env.local are correct:
+   - NEXT_PUBLIC_SUPABASE_URL should match your Supabase project URL
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY should match your Supabase anon key

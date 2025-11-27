@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { RateLimiter, enforceHTTPS, getCORSHeaders } from '@cueron/utils';
+import { RateLimiter, enforceHTTPS, getCORSHeaders } from '@cueron/utils/src/security';
 
 // Rate limiter instance (100 requests per minute per IP)
 const rateLimiter = new RateLimiter(100, 60000);

@@ -12,6 +12,7 @@ import type { Job, JobFilters } from '@cueron/types';
 import { JobsTable } from './JobsTable';
 import { JobsFilters } from './JobsFilters';
 import { JobsPagination } from './JobsPagination';
+import { useRealtimeJobs } from '@/hooks/useRealtimeJobs';
 
 interface JobsResponse {
   jobs: Job[];
@@ -22,7 +23,7 @@ interface JobsResponse {
 
 export function JobsListView() {
   const { profile } = useUserProfile();
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const { jobs, loading: jobsLoading, error: jobsError, refresh } = useRealtimeJobs(profile?.agency?.id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -83,8 +84,8 @@ export function JobsListView() {
       }
 
       const data: JobsResponse = await response.json();
-      setJobs(data.jobs);
       setTotal(data.total);
+      // Note: We're using real-time jobs from the hook, but we still need the total count
     } catch (err) {
       console.error('Error loading jobs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
@@ -112,7 +113,37 @@ export function JobsListView() {
     setPage(newPage);
   };
 
-  if (loading && jobs.length === 0) {
+  const handleJobStatusChange = async (jobId: string, newStatus: 'accepted' | 'cancelled') => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/jobs/${jobId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update job status');
+      }
+
+      // Refresh jobs to reflect the status change
+      await refresh();
+    } catch (err) {
+      console.error('Error updating job status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update job status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Combine loading states
+  const isLoading = loading || jobsLoading;
+  const hasError = error || jobsError;
+
+  if (isLoading && jobs.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8">
         <div className="flex items-center justify-center">
@@ -142,7 +173,7 @@ export function JobsListView() {
     );
   }
 
-  if (error) {
+  if (hasError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
         <div className="flex items-start gap-3">
@@ -161,7 +192,7 @@ export function JobsListView() {
           </svg>
           <div>
             <h4 className="font-semibold text-red-900 mb-1">Error Loading Jobs</h4>
-            <p className="text-sm text-red-800">{error}</p>
+            <p className="text-sm text-red-800">{hasError}</p>
             <button
               onClick={loadJobs}
               className="mt-3 text-sm font-medium text-red-600 hover:text-red-700"
@@ -180,16 +211,17 @@ export function JobsListView() {
       <JobsFilters
         filters={filters}
         onFilterChange={handleFilterChange}
-        loading={loading}
+        loading={isLoading}
       />
 
       {/* Jobs Table */}
       <JobsTable
         jobs={jobs}
-        loading={loading}
+        loading={isLoading}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={handleSortChange}
+        onJobStatusChange={handleJobStatusChange}
       />
 
       {/* Pagination */}
@@ -204,7 +236,7 @@ export function JobsListView() {
       )}
 
       {/* Empty state */}
-      {!loading && jobs.length === 0 && (
+      {!isLoading && jobs.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
@@ -216,7 +248,7 @@ export function JobsListView() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002-2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             />
           </svg>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>

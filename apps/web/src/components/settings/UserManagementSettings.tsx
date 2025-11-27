@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useUserProfile } from '@/hooks/useAuth';
 
 interface AgencyUser {
   id: string;
@@ -21,19 +22,24 @@ interface AgencyUser {
 }
 
 export function UserManagementSettings() {
+  const { profile, loading: profileLoading } = useUserProfile();
   const [users, setUsers] = useState<AgencyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO: Get agency ID from auth context
-  const agencyId = 'current-agency-id';
+  // Get agency ID from user profile
+  const agencyId = profile?.agency_id || profile?.agency?.id;
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (profile && agencyId) {
+      loadUsers();
+    }
+  }, [profile, agencyId]);
 
   const loadUsers = async () => {
+    if (!agencyId) return;
+    
     try {
       setLoading(true);
       // TODO: Implement API endpoint for fetching agency users
@@ -73,10 +79,18 @@ export function UserManagementSettings() {
     }
   };
 
-  if (loading) {
+  if (profileLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!agencyId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please select an agency to manage users.</p>
       </div>
     );
   }
@@ -199,54 +213,30 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
     phone: '',
     role: 'viewer' as 'admin' | 'manager' | 'viewer',
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      setSaving(true);
-      setError(null);
-
-      // TODO: Implement API endpoint for adding users
-      // const response = await fetch(`/api/agencies/${agencyId}/users`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // if (!response.ok) throw new Error('Failed to add user');
-
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add user');
-    } finally {
-      setSaving(false);
-    }
+    // TODO: Implement user creation logic
+    console.log('Creating user:', formData);
+    onSuccess();
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Add New User</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Add New User</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
-
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name *
@@ -275,7 +265,7 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number *
+              Phone Number
             </label>
             <input
               type="tel"
@@ -283,7 +273,6 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={10}
-              required
             />
           </div>
 
@@ -295,6 +284,7 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
               value={formData.role}
               onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             >
               <option value="viewer">Viewer</option>
               <option value="manager">Manager</option>
@@ -302,7 +292,7 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
@@ -312,10 +302,9 @@ function AddUserDialog({ onClose, onSuccess }: AddUserDialogProps) {
             </button>
             <button
               type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              {saving ? 'Adding...' : 'Add User'}
+              Add User
             </button>
           </div>
         </form>

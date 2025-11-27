@@ -4,7 +4,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/Toast';
-import { initSentry } from '@repo/utils/monitoring';
+import { initSentry } from '@cueron/utils';
 
 interface ProvidersProps {
   children: ReactNode;

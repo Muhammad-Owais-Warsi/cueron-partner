@@ -1,8 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logError } from '@repo/utils/monitoring';
-import { AppError, ErrorCode } from '@repo/utils/errors';
+import { logError } from '@cueron/utils/src/monitoring';
 
 interface Props {
   children: ReactNode;

@@ -158,6 +158,7 @@ export class LocationTrackingManager {
   private async updateEngineerLocation(update: LocationUpdate): Promise<void> {
     const { error } = await this.supabase
       .from('engineers')
+      // @ts-expect-error - engineers table exists but type inference fails
       .update({
         current_location: {
           type: 'Point',

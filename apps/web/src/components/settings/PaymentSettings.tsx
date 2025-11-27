@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useUserProfile } from '@/hooks/useAuth';
 
 interface PaymentSummary {
   total_payments: number;
@@ -28,19 +29,24 @@ interface RecentPayment {
 }
 
 export function PaymentSettings() {
+  const { profile, loading: profileLoading } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<PaymentSummary | null>(null);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO: Get agency ID from auth context
-  const agencyId = 'current-agency-id';
+  // Get agency ID from user profile
+  const agencyId = profile?.agency_id || profile?.agency?.id;
 
   useEffect(() => {
-    loadPaymentData();
-  }, []);
+    if (profile && agencyId) {
+      loadPaymentData();
+    }
+  }, [profile, agencyId]);
 
   const loadPaymentData = async () => {
+    if (!agencyId) return;
+    
     try {
       setLoading(true);
       const response = await fetch(`/api/agencies/${agencyId}/payments`);
@@ -100,10 +106,18 @@ export function PaymentSettings() {
     }
   };
 
-  if (loading) {
+  if (profileLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!agencyId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please select an agency to view payment settings.</p>
       </div>
     );
   }
@@ -201,68 +215,26 @@ export function PaymentSettings() {
         )}
       </div>
 
-      {/* Payment Method Info */}
+      {/* Payment Configuration */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Information</h3>
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-          <div>
-            <span className="text-sm text-gray-600">Payment Gateway:</span>
-            <p className="font-medium">Razorpay</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600">Payment Terms:</span>
-            <p className="font-medium">Net 30 days from job completion</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600">Supported Methods:</span>
-            <p className="font-medium">Bank Transfer, UPI, Credit/Debit Card</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bank Account Info */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Account</h3>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            Your bank account details are configured in the Agency Profile settings.
-            Payments will be processed to the registered bank account.
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Configuration</h3>
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-gray-600 mb-4">
+            Configure your payment preferences and view payment history.
           </p>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              // Switch to profile tab
-              const profileTab = document.querySelector('[data-tab="profile"]') as HTMLButtonElement;
-              profileTab?.click();
-            }}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium mt-2 inline-block"
-          >
-            Update Bank Details →
-          </a>
-        </div>
-      </div>
-
-      {/* Help Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Need Help?</h3>
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-sm text-gray-700 mb-3">
-            For payment-related queries or issues, please contact our support team:
-          </p>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-gray-600">Email:</span>
-              <a href="mailto:payments@cueron.com" className="text-blue-600 hover:text-blue-800 ml-2">
-                payments@cueron.com
-              </a>
-            </div>
-            <div>
-              <span className="text-gray-600">Phone:</span>
-              <a href="tel:+911234567890" className="text-blue-600 hover:text-blue-800 ml-2">
-                +91 123 456 7890
-              </a>
-            </div>
+          <div className="flex space-x-3">
+            <a
+              href="/dashboard/payments"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              View Payment History
+            </a>
+            <button
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              disabled
+            >
+              Configure Payment Methods
+            </button>
           </div>
         </div>
       </div>

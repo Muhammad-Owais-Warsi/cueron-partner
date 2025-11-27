@@ -165,7 +165,6 @@ async function handlePaymentSuccess(supabase: any, payload: any) {
 
   const orderId = order.id;
   const paymentId = payment.entity.id;
-  const amountPaid = payment.entity.amount / 100; // Convert from paise to INR
 
   console.log(`Processing successful payment: ${paymentId} for order: ${orderId}`);
 

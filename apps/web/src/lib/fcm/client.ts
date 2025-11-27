@@ -11,7 +11,6 @@ import type {
   FCMMessage,
   FCMResponse,
   PushNotificationContent,
-  NotificationData,
 } from './types';
 
 /**

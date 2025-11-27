@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { 
   assertPermission, 
   assertAgencyAccess
@@ -312,7 +312,7 @@ function calculatePercentageChange(oldValue: number, newValue: number): number {
 /**
  * Aggregate revenue data by period
  */
-function aggregateRevenue(metrics: any[], period: string) {
+function aggregateRevenue(metrics: any[], _period: string) {
   if (metrics.length === 0) {
     return {
       total_revenue: 0,

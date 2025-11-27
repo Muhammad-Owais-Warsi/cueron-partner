@@ -3,12 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { OTPInput } from '@/components/auth/OTPInput';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
-  const [step, setStep] = useState<'login' | 'otp'>('login');
-  const [phone, setPhone] = useState('');
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -55,16 +52,6 @@ export default function LoginPage() {
     return null;
   }
 
-  const handleOTPSent = (phoneNumber: string) => {
-    setPhone(phoneNumber);
-    setStep('otp');
-  };
-
-  const handleBack = () => {
-    setStep('login');
-    setPhone('');
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <div className="w-full max-w-md">
@@ -91,11 +78,7 @@ export default function LoginPage() {
 
         {/* Authentication Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {step === 'login' ? (
-            <LoginForm onOTPSent={handleOTPSent} />
-          ) : (
-            <OTPInput phone={phone} onBack={handleBack} />
-          )}
+          <LoginForm />
         </div>
 
         {/* Footer */}

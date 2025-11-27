@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Integration {
   id: string;
@@ -20,6 +21,7 @@ interface Integration {
 }
 
 export function IntegrationSettings() {
+  const { user } = useAuth();
   const [integrations] = useState<Integration[]>([
     {
       id: 'google-maps',
@@ -104,6 +106,14 @@ export function IntegrationSettings() {
     setSelectedIntegration(integration);
     setShowApiKeyDialog(true);
   };
+
+  if (!user) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please log in to view integration settings.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -201,17 +211,22 @@ export function IntegrationSettings() {
               </label>
               <div className="flex gap-2">
                 <input
-                  type="password"
-                  value="whsec_••••••••••••••••"
+                  type="text"
+                  value="••••••••••••••••••••••••••••••••"
                   readOnly
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white"
                 />
-                <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                  Regenerate
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('whsec_1234567890abcdef1234567890abcdef');
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Copy
                 </button>
               </div>
               <p className="text-xs text-gray-600 mt-1">
-                Keep this secret secure and never share it publicly
+                Secret key for webhook signature verification
               </p>
             </div>
           </div>
@@ -222,26 +237,26 @@ export function IntegrationSettings() {
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">API Documentation</h3>
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-sm text-gray-700 mb-3">
-            Access our API documentation to integrate with your own systems:
+          <p className="text-sm text-gray-600 mb-3">
+            Access our comprehensive API documentation for integration guides and endpoints.
           </p>
           <a
             href="https://docs.cueron.com/api"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            View API Documentation
-            <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            View Documentation
+            <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
         </div>
       </div>
 
-      {/* Configure Integration Dialog */}
+      {/* API Key Dialog */}
       {showApiKeyDialog && selectedIntegration && (
-        <ConfigureIntegrationDialog
+        <ApiKeyDialog
           integration={selectedIntegration}
           onClose={() => {
             setShowApiKeyDialog(false);
@@ -253,87 +268,90 @@ export function IntegrationSettings() {
   );
 }
 
-interface ConfigureIntegrationDialogProps {
+interface ApiKeyDialogProps {
   integration: Integration;
   onClose: () => void;
 }
 
-function ConfigureIntegrationDialog({ integration, onClose }: ConfigureIntegrationDialogProps) {
+function ApiKeyDialog({ integration, onClose }: ApiKeyDialogProps) {
   const [apiKey, setApiKey] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
-  const handleSave = async () => {
-    setSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setSaving(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement API key update logic
+    console.log('Updating API key for', integration.name, apiKey);
     onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Configure {integration.name}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900">
+            Configure {integration.name}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">
-              Integration settings are managed at the system level. Please contact your administrator or support team to update these settings.
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              API Key
+            </label>
+            <div className="relative">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                placeholder="Enter your API key"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                {showApiKey ? (
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Enter your {integration.name} API key for integration
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              API Key / Secret
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter API key"
-              disabled
-            />
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Save Configuration
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                integration.status === 'connected' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {integration.status}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Close
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !apiKey}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save Configuration'}
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );

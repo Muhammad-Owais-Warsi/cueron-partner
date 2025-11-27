@@ -1,52 +1,57 @@
 'use client';
 
 import { useState } from 'react';
-import { sendOTP, sendMagicLink } from '@/lib/auth';
-import { validatePhoneNumber } from '@cueron/utils';
+import { useRouter } from 'next/navigation';
+import { sendMagicLink, signInWithEmailAndPassword } from '@/lib/auth';
 
 interface LoginFormProps {
-  onOTPSent: (phone: string) => void;
   onEmailSent?: (email: string) => void;
 }
 
-export function LoginForm({ onOTPSent, onEmailSent }: LoginFormProps) {
-  const [phone, setPhone] = useState('');
+export function LoginForm({ onEmailSent }: LoginFormProps) {
   const [email, setEmail] = useState('');
-  const [usePhone, setUsePhone] = useState(true);
+  const [password, setPassword] = useState('');
+  const [usePassword, setUsePassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
-      if (usePhone) {
-        // Validate phone number
-        if (!validatePhoneNumber(phone)) {
-          throw new Error('Please enter a valid phone number (10 digits)');
+      if (!email || !email.includes('@')) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      if (usePassword) {
+        // Email and password authentication
+        if (!password || password.length < 6) {
+          throw new Error('Password must be at least 6 characters');
         }
 
-        // Send OTP
-        await sendOTP(phone);
-        onOTPSent(phone);
+        await signInWithEmailAndPassword(email, password);
+        // Set mock session
+        localStorage.setItem('mock-auth-session', 'true');
+        // Redirect to dashboard
+        router.push('/dashboard');
+        router.refresh();
       } else {
-        // Email authentication (Supabase magic link)
-        if (!email || !email.includes('@')) {
-          throw new Error('Please enter a valid email address');
-        }
-
-        // Send magic link
+        // Email magic link authentication (mock)
         await sendMagicLink(email);
         setEmailSent(true);
+        setSuccess('Check your email for the magic link!');
         if (onEmailSent) {
           onEmailSent(email);
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send authentication');
+      setError(err instanceof Error ? err.message : 'Failed to authenticate');
     } finally {
       setLoading(false);
     }
@@ -62,78 +67,87 @@ export function LoginForm({ onOTPSent, onEmailSent }: LoginFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Toggle between phone and email */}
+        {/* Toggle between magic link and password */}
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
           <button
             type="button"
-            onClick={() => setUsePhone(true)}
+            onClick={() => {
+              setUsePassword(false);
+              setEmailSent(false);
+              setSuccess(null);
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              usePhone
+              !usePassword
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Phone
+            Magic Link
           </button>
           <button
             type="button"
-            onClick={() => setUsePhone(false)}
+            onClick={() => {
+              setUsePassword(true);
+              setEmailSent(false);
+              setSuccess(null);
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              !usePhone
+              usePassword
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Email
+            Password
           </button>
         </div>
 
-        {/* Input field */}
-        {usePhone ? (
+        {/* Email input field */}
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Email Address
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        {/* Password input field */}
+        {usePassword && (
           <div>
             <label
-              htmlFor="phone"
+              htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Phone Number
+              Password
             </label>
             <input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter your phone number"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
               required
               disabled={loading}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Enter 10-digit mobile number
+              For demo: use any email with password "password123"
             </p>
-          </div>
-        ) : (
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              required
-              disabled={loading}
-            />
           </div>
         )}
 
-        {/* Success message for email */}
-        {emailSent && !usePhone && (
+        {/* Success message */}
+        {success && (
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-start gap-3">
               <svg
@@ -151,11 +165,7 @@ export function LoginForm({ onOTPSent, onEmailSent }: LoginFormProps) {
               </svg>
               <div>
                 <p className="text-sm font-medium text-green-800">
-                  Check your email!
-                </p>
-                <p className="text-sm text-green-700 mt-1">
-                  We've sent a magic link to <strong>{email}</strong>. Click the
-                  link in the email to sign in.
+                  {success}
                 </p>
               </div>
             </div>
@@ -172,7 +182,7 @@ export function LoginForm({ onOTPSent, onEmailSent }: LoginFormProps) {
         {/* Submit button */}
         <button
           type="submit"
-          disabled={loading || emailSent}
+          disabled={loading}
           className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
@@ -197,12 +207,10 @@ export function LoginForm({ onOTPSent, onEmailSent }: LoginFormProps) {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              {usePhone ? 'Sending OTP...' : 'Sending magic link...'}
+              {usePassword ? 'Signing in...' : 'Sending magic link...'}
             </span>
-          ) : emailSent ? (
-            'Email sent! Check your inbox'
           ) : (
-            'Continue'
+            usePassword ? 'Sign In' : 'Send Magic Link'
           )}
         </button>
       </form>

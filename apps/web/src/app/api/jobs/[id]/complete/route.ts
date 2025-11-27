@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { assertPermission } from '@cueron/utils/src/authorization';
 import { z } from 'zod';
 
@@ -92,8 +92,8 @@ function validateChecklistCompletion(
  * Requirement 8.3: Upload signature image to Supabase Storage
  */
 async function uploadSignature(
-  supabase: any,
-  jobId: string,
+  _supabase: any,
+  _jobId: string,
   signatureUrl: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {

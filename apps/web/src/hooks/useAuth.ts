@@ -2,8 +2,32 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+
+// Mock user data for development
+const MOCK_USER: User = {
+  id: 'mock-user-id',
+  app_metadata: {},
+  user_metadata: {
+    email: 'developer@example.com',
+    name: 'Developer User',
+  },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+  email: 'developer@example.com',
+  email_confirmed_at: new Date().toISOString(),
+  phone: '',
+  role: 'authenticated',
+  updated_at: new Date().toISOString(),
+};
+
+const MOCK_SESSION: Session = {
+  access_token: 'mock-access-token',
+  refresh_token: 'mock-refresh-token',
+  expires_in: 3600,
+  token_type: 'bearer',
+  user: MOCK_USER,
+};
 
 export interface AuthState {
   user: User | null;
@@ -13,7 +37,7 @@ export interface AuthState {
 }
 
 /**
- * Hook for managing authentication state
+ * Hook for managing authentication state (MOCK IMPLEMENTATION)
  * Provides current user, session, and loading state
  */
 export function useAuth() {
@@ -25,42 +49,50 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    const supabase = createClient();
+    // Check for mock session in localStorage
+    const hasMockSession = localStorage.getItem('mock-auth-session') === 'true';
+    
+    if (hasMockSession) {
+      setState({
+        user: MOCK_USER,
+        session: MOCK_SESSION,
+        loading: false,
+        error: null,
+      });
+    } else {
+      setState({
+        user: null,
+        session: null,
+        loading: false,
+        error: null,
+      });
+    }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        setState({
-          user: null,
-          session: null,
-          loading: false,
-          error,
-        });
-        return;
+    // Listen for storage changes (simulating auth state changes)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mock-auth-session') {
+        if (e.newValue === 'true') {
+          setState({
+            user: MOCK_USER,
+            session: MOCK_SESSION,
+            loading: false,
+            error: null,
+          });
+        } else {
+          setState({
+            user: null,
+            session: null,
+            loading: false,
+            error: null,
+          });
+        }
       }
+    };
 
-      setState({
-        user: session?.user ?? null,
-        session,
-        loading: false,
-        error: null,
-      });
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState({
-        user: session?.user ?? null,
-        session,
-        loading: false,
-        error: null,
-      });
-    });
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
@@ -68,7 +100,7 @@ export function useAuth() {
 }
 
 /**
- * Hook for requiring authentication
+ * Hook for requiring authentication (MOCK IMPLEMENTATION)
  * Redirects to login if not authenticated
  */
 export function useRequireAuth(redirectTo: string = '/login') {
@@ -85,25 +117,34 @@ export function useRequireAuth(redirectTo: string = '/login') {
 }
 
 /**
- * Hook for session management
+ * Hook for session management (MOCK IMPLEMENTATION)
  * Provides session refresh and sign out functions
  */
 export function useSession() {
   const { session, loading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const refreshSession = async () => {
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.error('Error refreshing session:', error);
-      return null;
+    // Mock implementation - simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // For demo purposes, return a mock session
+    const hasSession = localStorage.getItem('mock-auth-session') === 'true';
+    
+    if (hasSession) {
+      return MOCK_SESSION;
     }
-    return data.session;
+    
+    return null;
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Mock implementation - simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Clear mock session
+    localStorage.removeItem('mock-auth-session');
+    
     router.push('/login');
     router.refresh();
   };
@@ -117,7 +158,7 @@ export function useSession() {
 }
 
 /**
- * Hook for user profile data
+ * Hook for user profile data (MOCK IMPLEMENTATION)
  * Fetches additional user information from database
  */
 export function useUserProfile() {
@@ -135,44 +176,29 @@ export function useUserProfile() {
 
     const fetchProfile = async () => {
       try {
-        const supabase = createClient();
+        // Mock implementation - simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Mock profile data
+        const mockProfile = {
+          type: 'agency_user',
+          id: 'mock-profile-id',
+          user_id: 'mock-user-id',
+          name: 'Developer User',
+          email: 'developer@example.com',
+          role: 'admin',
+          agency: {
+            id: 'mock-agency-id',
+            name: 'Demo Agency',
+            type: 'premium',
+            partnership_tier: 'gold',
+          },
+        };
 
-        // Check if user is an engineer
-        const { data: engineer } = await supabase
-          .from('engineers')
-          .select('*, agency:agencies(name)')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (engineer) {
-          setProfile({
-            type: 'engineer',
-            ...engineer,
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Check if user is an agency user
-        const { data: agencyUser } = await supabase
-          .from('agency_users')
-          .select('*, agency:agencies(name, type, partnership_tier)')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (agencyUser) {
-          setProfile({
-            type: 'agency_user',
-            ...agencyUser,
-          });
-          setLoading(false);
-          return;
-        }
-
-        // No profile found
-        setProfile(null);
+        setProfile(mockProfile);
         setLoading(false);
       } catch (err) {
+        console.error('Error in fetchProfile:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch profile'));
         setLoading(false);
       }

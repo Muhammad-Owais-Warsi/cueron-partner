@@ -6,7 +6,7 @@
 import { POST } from './route';
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 
 // Mock dependencies
 jest.mock('@/lib/supabase/server');

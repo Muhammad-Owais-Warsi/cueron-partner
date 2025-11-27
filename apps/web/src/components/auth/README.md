@@ -5,13 +5,13 @@ This directory contains the authentication UI components for the Cueron Partner 
 ## Components
 
 ### LoginForm
-The initial login form that allows users to authenticate using phone number or email.
+The initial login form that allows users to authenticate using email with either magic links or password.
 
 **Features:**
-- Phone number input with validation
-- Email input (placeholder for future implementation)
-- Toggle between phone and email authentication
-- Loading states during OTP sending
+- Email input with validation
+- Toggle between magic link and password authentication
+- Password input field
+- Loading states during authentication
 - Error handling and display
 - Form validation
 
@@ -19,31 +19,7 @@ The initial login form that allows users to authenticate using phone number or e
 ```tsx
 import { LoginForm } from '@/components/auth/LoginForm';
 
-<LoginForm onOTPSent={(phone) => console.log('OTP sent to:', phone)} />
-```
-
-### OTPInput
-A 6-digit OTP input component with auto-focus and auto-submit functionality.
-
-**Features:**
-- 6 individual input boxes for OTP digits
-- Auto-focus next input on digit entry
-- Auto-submit when all 6 digits entered
-- Paste support for OTP codes
-- Backspace navigation between inputs
-- Loading states during verification
-- Error handling and display
-- Resend OTP functionality
-
-**Usage:**
-```tsx
-import { OTPInput } from '@/components/auth/OTPInput';
-
-<OTPInput 
-  phone="+919876543210" 
-  onBack={() => console.log('Back to login')}
-  onSuccess={() => console.log('OTP verified')}
-/>
+<LoginForm onEmailSent={(email) => console.log('Magic link sent to:', email)} />
 ```
 
 ### ProtectedRoute
@@ -100,7 +76,7 @@ function MyComponent() {
   if (loading) return <div>Loading...</div>;
   if (!user) return <div>Not authenticated</div>;
   
-  return <div>Welcome {user.phone}</div>;
+  return <div>Welcome {user.email}</div>;
 }
 ```
 
@@ -116,7 +92,7 @@ function MyProtectedComponent() {
   
   if (loading) return <div>Loading...</div>;
   
-  return <div>Welcome {user.phone}</div>;
+  return <div>Welcome {user.email}</div>;
 }
 ```
 
@@ -180,11 +156,11 @@ function MyComponent() {
 The login page that handles the authentication flow.
 
 **Flow:**
-1. User enters phone number
-2. OTP is sent via Supabase Auth
-3. User enters 6-digit OTP
-4. OTP is verified
-5. Session is created
+1. User enters email address
+2. User chooses between magic link or password authentication
+3. If magic link: Link is sent via Supabase Auth (MOCK IMPLEMENTATION)
+4. If password: User enters password and signs in (MOCK IMPLEMENTATION)
+5. Session is created in localStorage
 6. User is redirected to dashboard
 
 ### /dashboard
@@ -203,32 +179,33 @@ Protected dashboard page that requires authentication.
 sequenceDiagram
     participant User
     participant LoginForm
-    participant Supabase
-    participant OTPInput
+    participant MockAuth
     participant Dashboard
 
-    User->>LoginForm: Enter phone number
-    LoginForm->>Supabase: sendOTP(phone)
-    Supabase-->>LoginForm: OTP sent
-    LoginForm->>OTPInput: Show OTP input
-    User->>OTPInput: Enter 6-digit OTP
-    OTPInput->>Supabase: verifyOTP(phone, otp)
-    Supabase-->>OTPInput: Session created
-    OTPInput->>Dashboard: Redirect to dashboard
+    User->>LoginForm: Enter email
+    User->>LoginForm: Choose auth method
+    alt Password Auth
+        User->>LoginForm: Enter password
+        LoginForm->>MockAuth: signInWithEmailAndPassword(email, password)
+        MockAuth-->>LoginForm: Mock session created
+        LoginForm->>Dashboard: Redirect to dashboard
+    else Magic Link Auth
+        LoginForm->>MockAuth: sendMagicLink(email)
+        MockAuth-->>LoginForm: Mock success response
+        LoginForm->>User: Show success message
+    end
     Dashboard->>User: Show protected content
 ```
 
 ## Validation
 
-### Phone Number Validation
-- Must be 10 digits
-- Validated using `validatePhoneNumber` from `@cueron/utils`
-- Formatted using `formatPhoneNumber` before sending to Supabase
+### Email Validation
+- Must be a valid email format
+- Validated using standard email validation
 
-### OTP Validation
-- Must be 6 digits
-- Validated using `validateOTP` from `@cueron/utils`
-- Auto-submit when all 6 digits entered
+### Password Validation
+- Must be at least 6 characters
+- No other restrictions for now
 
 ## Error Handling
 
@@ -251,19 +228,10 @@ All components include loading states:
 
 ## Security
 
-- JWT tokens stored in httpOnly cookies (handled by Supabase)
-- Session refresh on expiration
-- Automatic redirect on authentication failure
-- Row Level Security enforced at database level
-- HTTPS required for all authentication requests
-
-## Requirements Validation
-
-This implementation satisfies the following requirements:
-
-**Requirement 12.1**: Phone OTP authentication via Supabase Auth
-**Requirement 12.3**: OTP verification with session creation
-**Requirement 12.4**: Session management with JWT tokens
+Authentication is handled through a mock system for development purposes:
+- Sessions are stored in localStorage
+- No real authentication is performed
+- For production, this will be replaced with Supabase Auth
 
 ## Testing
 
@@ -278,17 +246,17 @@ To test the authentication flow:
 
 3. You'll be redirected to `/login`
 
-4. Enter a valid phone number (requires Supabase SMS provider configured)
+4. Enter a valid email address
 
-5. Enter the OTP received
+5. Choose authentication method:
+   - For magic link: Click "Send Magic Link" (will show success message)
+   - For password: Enter "password123" and click "Sign In"
 
 6. You'll be redirected to `/dashboard`
 
 ## Future Enhancements
 
-- Email authentication with magic links
-- Biometric authentication for mobile
 - Remember device functionality
 - Multi-factor authentication
 - Social authentication providers
-- Password-based authentication option
+- Password reset functionality

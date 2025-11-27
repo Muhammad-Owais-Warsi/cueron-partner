@@ -5,37 +5,35 @@
  */
 
 import { createClient } from '../supabase/client';
-import { formatPhoneNumber, validatePhoneNumber, validateOTP } from '@cueron/utils';
 import type { Session, User } from '@supabase/supabase-js';
 
+// Mock user data for development
+const MOCK_USER: User = {
+  id: 'mock-user-id',
+  app_metadata: {},
+  user_metadata: {
+    email: 'developer@example.com',
+    name: 'Developer User',
+  },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+  email: 'developer@example.com',
+  email_confirmed_at: new Date().toISOString(),
+  phone: '',
+  role: 'authenticated',
+  updated_at: new Date().toISOString(),
+};
+
+const MOCK_SESSION: Session = {
+  access_token: 'mock-access-token',
+  refresh_token: 'mock-refresh-token',
+  expires_in: 3600,
+  token_type: 'bearer',
+  user: MOCK_USER,
+};
+
 /**
- * Send OTP to phone number
- * Client-side function
- */
-export async function sendOTP(phone: string) {
-  if (!validatePhoneNumber(phone)) {
-    throw new Error('Invalid phone number format');
-  }
-
-  const formattedPhone = formatPhoneNumber(phone);
-  const supabase = createClient();
-
-  const { data, error } = await supabase.auth.signInWithOtp({
-    phone: formattedPhone,
-    options: {
-      channel: 'sms',
-    },
-  });
-
-  if (error) {
-    throw new Error(`Failed to send OTP: ${error.message}`);
-  }
-
-  return data;
-}
-
-/**
- * Send magic link to email
+ * Send magic link to email (MOCK IMPLEMENTATION)
  * Client-side function
  */
 export async function sendMagicLink(email: string) {
@@ -43,108 +41,138 @@ export async function sendMagicLink(email: string) {
     throw new Error('Invalid email format');
   }
 
-  const supabase = createClient();
-
-  const { data, error } = await supabase.auth.signInWithOtp({
-    email: email.toLowerCase().trim(),
-    options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
-    },
-  });
-
-  if (error) {
-    throw new Error(`Failed to send magic link: ${error.message}`);
-  }
-
-  return data;
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // In a real implementation, this would send an email
+  console.log(`[MOCK] Magic link would be sent to: ${email}`);
+  
+  // Return mock data
+  return {
+    user: null,
+    session: null,
+  };
 }
 
 /**
- * Verify OTP and create session
+ * Sign in with email and password (MOCK IMPLEMENTATION)
  * Client-side function
  */
-export async function verifyOTP(phone: string, token: string) {
-  if (!validatePhoneNumber(phone)) {
-    throw new Error('Invalid phone number format');
+export async function signInWithEmailAndPassword(email: string, password: string) {
+  if (!email || !email.includes('@')) {
+    throw new Error('Invalid email format');
   }
 
-  if (!validateOTP(token)) {
-    throw new Error('Invalid OTP format');
+  if (!password || password.length < 6) {
+    throw new Error('Password must be at least 6 characters');
   }
 
-  const formattedPhone = formatPhoneNumber(phone);
-  const supabase = createClient();
-
-  const { data, error } = await supabase.auth.verifyOtp({
-    phone: formattedPhone,
-    token,
-    type: 'sms',
-  });
-
-  if (error) {
-    throw new Error(`Failed to verify OTP: ${error.message}`);
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Simulate authentication logic
+  if (password === 'password123') {
+    console.log(`[MOCK] User ${email} signed in successfully`);
+    return {
+      user: MOCK_USER,
+      session: MOCK_SESSION,
+    };
+  } else {
+    throw new Error('Invalid email or password');
   }
-
-  return data;
 }
 
 /**
- * Get current session
+ * Sign up with email and password (MOCK IMPLEMENTATION)
+ * Client-side function
+ */
+export async function signUpWithEmailAndPassword(email: string, password: string) {
+  if (!email || !email.includes('@')) {
+    throw new Error('Invalid email format');
+  }
+
+  if (!password || password.length < 6) {
+    throw new Error('Password must be at least 6 characters');
+  }
+
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  console.log(`[MOCK] User ${email} signed up successfully`);
+  
+  // Return mock data
+  return {
+    user: MOCK_USER,
+    session: MOCK_SESSION,
+  };
+}
+
+/**
+ * Get current session (MOCK IMPLEMENTATION)
  * Client-side function
  */
 export async function getSession(): Promise<Session | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.getSession();
-
-  if (error) {
-    console.error('Error getting session:', error);
-    return null;
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // For demo purposes, return a mock session
+  // In a real implementation, you might check localStorage or cookies
+  const hasSession = localStorage.getItem('mock-auth-session') === 'true';
+  
+  if (hasSession) {
+    return MOCK_SESSION;
   }
-
-  return data.session;
+  
+  return null;
 }
 
 /**
- * Get current user
+ * Get current user (MOCK IMPLEMENTATION)
  * Client-side function
  */
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error) {
-    console.error('Error getting user:', error);
-    return null;
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // For demo purposes, return a mock user
+  // In a real implementation, you might check localStorage or cookies
+  const hasSession = localStorage.getItem('mock-auth-session') === 'true';
+  
+  if (hasSession) {
+    return MOCK_USER;
   }
-
-  return data.user;
+  
+  return null;
 }
 
 /**
- * Refresh session
+ * Refresh session (MOCK IMPLEMENTATION)
  * Client-side function
  */
 export async function refreshSession(): Promise<Session | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.refreshSession();
-
-  if (error) {
-    console.error('Error refreshing session:', error);
-    return null;
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // For demo purposes, return a mock session
+  const hasSession = localStorage.getItem('mock-auth-session') === 'true';
+  
+  if (hasSession) {
+    return MOCK_SESSION;
   }
-
-  return data.session;
+  
+  return null;
 }
 
 /**
- * Sign out
+ * Sign out (MOCK IMPLEMENTATION)
  * Client-side function
  */
 export async function signOut() {
-  const supabase = createClient();
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {
-    throw new Error(`Failed to sign out: ${error.message}`);
-  }
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Clear mock session
+  localStorage.removeItem('mock-auth-session');
+  
+  console.log('[MOCK] User signed out');
 }

@@ -11,30 +11,12 @@ import {
   DashboardSkeleton,
 } from '@/components/dashboard';
 import { useEffect, useState } from 'react';
-
-interface DashboardData {
-  summary: {
-    total_jobs_completed: number;
-    total_revenue: number;
-    avg_rating: number;
-    total_engineers: number;
-    active_engineers: number;
-  };
-  charts: {
-    jobs_trend: any[];
-    revenue_trend: any[];
-    rating_distribution: any[];
-    job_type_distribution: any[];
-  };
-  trends: {
-    jobs_growth: number;
-    revenue_growth: number;
-    rating_change: number;
-  };
-}
+import { useRealtimeEarnings } from '@/hooks/useRealtimeEarnings';
+import type { DashboardData } from '@/types/dashboard';
 
 function DashboardContent() {
   const { profile, loading: profileLoading } = useUserProfile();
+  const { earnings, loading: earningsLoading, error: earningsError } = useRealtimeEarnings(profile?.agency?.id);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +103,7 @@ function DashboardContent() {
       label: 'View Analytics',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
       onClick: () => console.log('View analytics'),
@@ -131,13 +113,16 @@ function DashboardContent() {
       label: 'Export Report',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
       onClick: () => console.log('Export report'),
       variant: 'secondary' as const,
     },
   ];
+
+  const isLoading = dataLoading || earningsLoading;
+  const hasError = error || earningsError;
 
   return (
     <DashboardLayout>
@@ -151,9 +136,9 @@ function DashboardContent() {
         </p>
       </div>
 
-      {dataLoading ? (
+      {isLoading ? (
         <DashboardSkeleton />
-      ) : error ? (
+      ) : hasError ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
             <svg
@@ -171,7 +156,7 @@ function DashboardContent() {
             </svg>
             <div>
               <h4 className="font-semibold text-red-900 mb-1">Error Loading Dashboard</h4>
-              <p className="text-sm text-red-800">{error}</p>
+              <p className="text-sm text-red-800">{hasError}</p>
               <button
                 onClick={() => profile?.agency?.id && loadDashboardData(profile.agency.id)}
                 className="mt-3 text-sm font-medium text-red-600 hover:text-red-700"
@@ -183,15 +168,82 @@ function DashboardContent() {
         </div>
       ) : (
         <>
-          {/* Overview Cards */}
+          {/* Earnings Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Daily Earnings */}
+            <OverviewCard
+              title="Today's Earnings"
+              value={`₹${(earnings?.daily.earnings || 0).toLocaleString()}`}
+              icon={
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              }
+              subtitle={`${earnings?.daily.jobs_completed || 0} jobs completed`}
+            />
+
+            {/* Monthly Earnings */}
+            <OverviewCard
+              title="Monthly Earnings"
+              value={`₹${(earnings?.monthly.earnings || 0).toLocaleString()}`}
+              icon={
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              }
+              subtitle={`${earnings?.monthly.jobs_completed || 0} jobs completed`}
+            />
+
+            {/* Yearly Earnings */}
+            <OverviewCard
+              title="YTD Earnings"
+              value={`₹${(earnings?.yearly.earnings || 0).toLocaleString()}`}
+              icon={
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              }
+              subtitle="Year to date"
+            />
+
+            {/* Average Rating */}
+            <OverviewCard
+              title="Average Rating"
+              value={`${(dashboardData?.summary.avg_rating || 0).toFixed(1)} ⭐`}
+              icon={
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-.38 1.81.588 1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                </div>
+              }
+              trend={
+                dashboardData?.trends.rating_change
+                  ? {
+                      value: Math.abs(dashboardData.trends.rating_change * 20), // Convert to percentage
+                      isPositive: dashboardData.trends.rating_change >= 0,
+                    }
+                  : undefined
+              }
+            />
+          </div>
+
+          {/* Jobs and Engineers Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Jobs Completed */}
             <OverviewCard
               title="Jobs Completed"
               value={dashboardData?.summary.total_jobs_completed || 0}
               icon={
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
               }
@@ -206,6 +258,7 @@ function DashboardContent() {
               subtitle="Last 6 months"
             />
 
+            {/* Total Revenue */}
             <OverviewCard
               title="Total Revenue"
               value={`₹${(dashboardData?.summary.total_revenue || 0).toLocaleString()}`}
@@ -227,26 +280,7 @@ function DashboardContent() {
               subtitle="Last 6 months"
             />
 
-            <OverviewCard
-              title="Average Rating"
-              value={`${(dashboardData?.summary.avg_rating || 0).toFixed(1)} ⭐`}
-              icon={
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                </div>
-              }
-              trend={
-                dashboardData?.trends.rating_change
-                  ? {
-                      value: Math.abs(dashboardData.trends.rating_change * 20), // Convert to percentage
-                      isPositive: dashboardData.trends.rating_change >= 0,
-                    }
-                  : undefined
-              }
-            />
-
+            {/* Active Engineers */}
             <OverviewCard
               title="Active Engineers"
               value={`${dashboardData?.summary.active_engineers || 0} / ${dashboardData?.summary.total_engineers || 0}`}
@@ -259,6 +293,26 @@ function DashboardContent() {
               }
               subtitle="Currently available"
             />
+
+            {/* Placeholder Card */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Quick Stats</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900">
+                    {dashboardData?.summary.total_jobs_completed || 0} Total Jobs
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {dashboardData?.summary.total_engineers || 0} Engineers
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Actions */}

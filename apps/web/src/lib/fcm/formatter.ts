@@ -56,7 +56,7 @@ export function formatJobAssignmentNotification(
 export function formatJobStatusNotification(
   data: Omit<JobStatusNotificationData, 'type'>
 ): PushNotificationContent {
-  const { job_number, old_status, new_status, engineer_name } = data;
+  const { job_number, new_status, engineer_name } = data;
 
   const statusMessages: Record<string, string> = {
     assigned: 'has been assigned',

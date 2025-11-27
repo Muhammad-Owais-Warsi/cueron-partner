@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { assertPermission } from '@cueron/utils/src/authorization';
 
 /**
@@ -222,7 +222,7 @@ function validateJobDetailCompleteness(job: any): {
  * - 3.5: Calculate and show distance from available engineers
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

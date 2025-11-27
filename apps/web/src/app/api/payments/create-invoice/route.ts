@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
+import { getUserSession } from '@/lib/auth/server';
 import { 
   assertPermission, 
   assertAgencyAccess
@@ -420,7 +420,7 @@ export async function POST(request: NextRequest) {
     const fileName = `${invoiceNumber}.pdf`;
     const filePath = `invoices/${payment.agency_id}/${fileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase
+    const { error: uploadError } = await supabase
       .storage
       .from('documents')
       .upload(filePath, pdfBuffer, {

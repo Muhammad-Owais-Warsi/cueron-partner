@@ -2,8 +2,8 @@
  * API client with error handling and retry logic
  */
 
-import { retryWithBackoff, parseError, AppError, ErrorCode } from '@repo/utils/errors';
-import { logError } from '@repo/utils/monitoring';
+import { retryWithBackoff, parseError, AppError, ErrorCode } from '@cueron/utils/src/errors';
+import { logError } from '@cueron/utils/src/monitoring';
 
 export interface ApiClientConfig {
   baseUrl?: string;
@@ -198,14 +198,13 @@ export class ApiClient {
    * Upload file with multipart/form-data
    */
   async upload<T>(endpoint: string, formData: FormData, options?: RequestOptions): Promise<T> {
-    const headers = { ...options?.headers };
-    // Remove Content-Type to let browser set it with boundary
-    delete headers['Content-Type'];
+    // Don't include Content-Type header - let browser set it with boundary
+    const { 'Content-Type': _, ...restHeaders } = (options?.headers || {}) as Record<string, string>;
 
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      headers,
+      headers: restHeaders,
       body: formData,
     });
   }

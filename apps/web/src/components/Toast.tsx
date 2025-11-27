@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { AppError, getUserFriendlyMessage } from '@repo/utils/errors';
+import { AppError } from '@cueron/utils/src/errors';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 

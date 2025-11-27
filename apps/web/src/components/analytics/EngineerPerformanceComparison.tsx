@@ -45,7 +45,6 @@ type SortOrder = 'asc' | 'desc';
 export function EngineerPerformanceComparison({
   engineers = [],
   loading = false,
-  agencyId,
 }: EngineerPerformanceComparisonProps) {
   const [sortField, setSortField] = useState<SortField>('rating');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');

@@ -215,6 +215,39 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
 
+          {/* Profile link
+          <div className="mt-auto px-2">
+            <Link
+              href="/dashboard/profile"
+              className={`
+                group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                ${
+                  pathname === '/dashboard/profile'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                }
+              `}
+            >
+              <svg
+                className={`
+                  mr-3 flex-shrink-0 h-5 w-5
+                  ${pathname === '/dashboard/profile' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}
+                `}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              My Profile
+            </Link>
+          </div> */}
+
           {/* Role badge */}
           <div className="flex-shrink-0 px-4 py-4 border-t border-gray-200">
             <div className="flex items-center">
@@ -315,6 +348,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               );
             })}
           </nav>
+
+          {/* Profile link */}
+          {/* <div className="px-2">
+            <Link
+              href="/dashboard/profile"
+              onClick={onClose}
+              className={`
+                group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                ${
+                  pathname === '/dashboard/profile'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                }
+              `}
+            >
+              <svg
+                className={`
+                  mr-3 flex-shrink-0 h-5 w-5
+                  ${pathname === '/dashboard/profile' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}
+                `}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+             // My Profile
+          //  </Link>
+          </div> */}
 
           {/* Role badge */}
           <div className="flex-shrink-0 px-4 py-4 border-t border-gray-200">

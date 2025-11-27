@@ -11,8 +11,10 @@
 
 import { useState, useEffect } from 'react';
 import type { Agency, UpdateAgencyInput } from '@cueron/types';
+import { useUserProfile } from '@/hooks/useAuth';
 
 export function AgencyProfileSettings() {
+  const { profile, loading: profileLoading } = useUserProfile();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,14 +35,18 @@ export function AgencyProfileSettings() {
 
   const [newServiceArea, setNewServiceArea] = useState('');
 
-  // TODO: Get agency ID from auth context
-  const agencyId = 'current-agency-id';
+  // Get agency ID from user profile
+  const agencyId = profile?.agency_id || profile?.agency?.id;
 
   useEffect(() => {
-    loadAgencyData();
-  }, []);
+    if (profile && agencyId) {
+      loadAgencyData();
+    }
+  }, [profile, agencyId]);
 
   const loadAgencyData = async () => {
+    if (!agencyId) return;
+    
     try {
       setLoading(true);
       const response = await fetch(`/api/agencies/${agencyId}`);
@@ -73,6 +79,11 @@ export function AgencyProfileSettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!agencyId) {
+      setError('Agency ID not found. Please refresh the page and try again.');
+      return;
+    }
     
     try {
       setSaving(true);
@@ -131,10 +142,18 @@ export function AgencyProfileSettings() {
     }));
   };
 
-  if (loading) {
+  if (profileLoading || loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!agencyId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please select an agency to view and edit profile settings.</p>
       </div>
     );
   }

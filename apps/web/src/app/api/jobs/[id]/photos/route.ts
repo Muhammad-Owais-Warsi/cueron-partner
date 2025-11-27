@@ -228,7 +228,7 @@ export async function POST(
       .eq('id', jobId)
       .single();
 
-    const currentPhotos = (currentJob?.[photoField] as string[]) || [];
+    const currentPhotos = ((currentJob?.[photoField as keyof typeof currentJob] as unknown) as string[]) || [];
     const updatedPhotos = [...currentPhotos, publicUrl];
 
     // Update job with new photo URL
@@ -283,7 +283,7 @@ export async function POST(
  * Get all photos for a job
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

@@ -9,6 +9,7 @@
 import Link from 'next/link';
 import type { Job } from '@cueron/types';
 import { formatDate, formatTime } from '@/lib/utils/formatting';
+import { useUserProfile } from '@/hooks/useAuth';
 
 interface JobsTableProps {
   jobs: Job[];
@@ -16,6 +17,7 @@ interface JobsTableProps {
   sortBy: 'urgency' | 'scheduled_time';
   sortOrder: 'asc' | 'desc';
   onSortChange: (field: 'urgency' | 'scheduled_time') => void;
+  onJobStatusChange?: (jobId: string, newStatus: 'accepted' | 'cancelled') => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -35,7 +37,9 @@ const URGENCY_COLORS: Record<string, string> = {
   scheduled: 'bg-gray-100 text-gray-800',
 };
 
-export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange }: JobsTableProps) {
+export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange, onJobStatusChange }: JobsTableProps) {
+  const { profile } = useUserProfile();
+
   const SortIcon = ({ field }: { field: 'urgency' | 'scheduled_time' }) => {
     if (sortBy !== field) {
       return (
@@ -54,6 +58,18 @@ export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange }: Jo
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     );
+  };
+
+  const handleAcceptJob = async (jobId: string) => {
+    if (onJobStatusChange) {
+      onJobStatusChange(jobId, 'accepted');
+    }
+  };
+
+  const handleRejectJob = async (jobId: string) => {
+    if (onJobStatusChange) {
+      onJobStatusChange(jobId, 'cancelled');
+    }
   };
 
   return (
@@ -184,12 +200,29 @@ export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange }: Jo
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <Link
-                      href={`/dashboard/jobs/${job.id}`}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
-                    >
-                      View
-                    </Link>
+                    {job.status === 'assigned' && job.assigned_engineer_id === profile?.id ? (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleAcceptJob(job.id)}
+                          className="text-green-600 hover:text-green-900 font-medium"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleRejectJob(job.id)}
+                          className="text-red-600 hover:text-red-900 font-medium"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/dashboard/jobs/${job.id}`}
+                        className="text-blue-600 hover:text-blue-900 font-medium"
+                      >
+                        View
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))
