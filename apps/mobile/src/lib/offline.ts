@@ -5,7 +5,7 @@
 
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppError, ErrorCode } from '@repo/utils/errors';
+// import { AppError, ErrorCode } from '@repo/utils/errors'; // TODO: Implement error utils
 
 const OFFLINE_QUEUE_KEY = '@cueron/offline_queue';
 

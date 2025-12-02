@@ -15,6 +15,8 @@ import {
   assertPermission, 
   assertAgencyAccess
 } from '@cueron/utils/src/authorization';
+import { isDemoUser } from '@/lib/demo-data/middleware';
+import { generateDashboardData } from '@/lib/demo-data/generator';
 
 /**
  * Error response helper
@@ -122,6 +124,40 @@ export async function GET(
         undefined,
         400
       );
+    }
+
+    // Check if this is a demo user and serve generated data
+    if (isDemoUser(session)) {
+      try {
+        const demoData = generateDashboardData(session.user_id, period);
+        
+        // Build response matching the exact format of real data
+        const response: any = {
+          agency_id: agencyId,
+          period,
+          summary: demoData.summary,
+          generated_at: new Date().toISOString(),
+        };
+
+        // Include chart data if requested
+        if (includeCharts) {
+          response.charts = {
+            jobs_trend: demoData.charts.jobs_trend,
+            revenue_trend: demoData.charts.revenue_trend,
+            rating_distribution: demoData.charts.rating_distribution,
+            job_type_distribution: demoData.charts.job_type_distribution,
+            engineer_performance: [], // Empty array for demo data
+          };
+        }
+
+        // Include trends
+        response.trends = demoData.trends;
+
+        return successResponse(response);
+      } catch (error) {
+        console.error('Error generating demo data:', error);
+        // Fall through to real data query on error
+      }
     }
 
     // Calculate date range based on period
@@ -345,7 +381,7 @@ function buildJobTypeDistributionChart(jobs: any[]) {
   };
 
   jobs.forEach(job => {
-    if (job.job_type && typeCounts.hasOwnProperty(job.job_type)) {
+    if (job.job_type && Object.prototype.hasOwnProperty.call(typeCounts, job.job_type)) {
       typeCounts[job.job_type]++;
     }
   });

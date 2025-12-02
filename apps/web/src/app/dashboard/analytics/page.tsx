@@ -24,12 +24,12 @@ export default function AnalyticsPage() {
 
   // Fetch analytics data
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
-    queryKey: ['analytics', profile?.agency_id, period],
+    queryKey: ['analytics', profile?.agency?.id, period],
     queryFn: async () => {
-      if (!profile?.agency_id) throw new Error('No agency ID');
+      if (!profile?.agency?.id) throw new Error('No agency ID');
       
       const response = await fetch(
-        `/api/agencies/${profile.agency_id}/analytics?period=${period}&includeCharts=true`
+        `/api/agencies/${profile.agency.id}/analytics?period=${period}&includeCharts=true`
       );
       
       if (!response.ok) {
@@ -38,17 +38,17 @@ export default function AnalyticsPage() {
       
       return response.json();
     },
-    enabled: !!profile?.agency_id,
+    enabled: !!profile?.agency?.id,
   });
 
   // Fetch engineer performance data
   const { data: engineersData, isLoading: engineersLoading } = useQuery({
-    queryKey: ['engineers', profile?.agency_id],
+    queryKey: ['engineers', profile?.agency?.id],
     queryFn: async () => {
-      if (!profile?.agency_id) throw new Error('No agency ID');
+      if (!profile?.agency?.id) throw new Error('No agency ID');
       
       const response = await fetch(
-        `/api/agencies/${profile.agency_id}/engineers?status=all`
+        `/api/agencies/${profile.agency.id}/engineers?status=all`
       );
       
       if (!response.ok) {
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
       
       return response.json();
     },
-    enabled: !!profile?.agency_id && activeTab === 'engineers',
+    enabled: !!profile?.agency?.id && activeTab === 'engineers',
   });
 
   const tabs = [
@@ -143,14 +143,14 @@ export default function AnalyticsPage() {
             <EngineerPerformanceComparison
               engineers={engineersData?.engineers || []}
               loading={engineersLoading}
-              agencyId={profile?.agency_id}
+              agencyId={profile?.agency?.id}
             />
           )}
 
           {activeTab === 'reports' && (
             <div className="space-y-8">
-              <ReportExportInterface agencyId={profile?.agency_id} />
-              <MonthlyReportPreview agencyId={profile?.agency_id} />
+              <ReportExportInterface agencyId={profile?.agency?.id} />
+              <MonthlyReportPreview agencyId={profile?.agency?.id} />
             </div>
           )}
         </div>

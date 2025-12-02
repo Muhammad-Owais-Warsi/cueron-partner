@@ -14,7 +14,7 @@ export function LoginForm({ onEmailSent }: LoginFormProps) {
   const [usePassword, setUsePassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
+  const [_emailSent, setEmailSent] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
 

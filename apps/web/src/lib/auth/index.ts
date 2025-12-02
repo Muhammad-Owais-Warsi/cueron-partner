@@ -4,7 +4,7 @@
  * For server-side auth, import from './server'
  */
 
-import { createClient } from '../supabase/client';
+// import { createClient } from '../supabase/client'; // Unused in mock implementation
 import type { Session, User } from '@supabase/supabase-js';
 
 // Mock user data for development
@@ -175,4 +175,33 @@ export async function signOut() {
   localStorage.removeItem('mock-auth-session');
   
   console.log('[MOCK] User signed out');
+}
+
+/**
+ * Verify OTP code (MOCK IMPLEMENTATION)
+ * Client-side function
+ */
+export async function verifyOTP(phone: string, otp: string) {
+  if (!phone) {
+    throw new Error('Phone number is required');
+  }
+
+  if (!otp || otp.length !== 6) {
+    throw new Error('OTP must be 6 digits');
+  }
+
+  // Mock implementation - simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Simulate OTP verification logic
+  // For demo, accept any 6-digit code
+  if (/^\d{6}$/.test(otp)) {
+    console.log(`[MOCK] OTP verified for phone: ${phone}`);
+    return {
+      user: MOCK_USER,
+      session: MOCK_SESSION,
+    };
+  } else {
+    throw new Error('Invalid OTP code');
+  }
 }

@@ -277,6 +277,7 @@ export interface AgencyUser {
   
   // Status
   is_active: boolean;
+  is_demo_user: boolean;
   
   // Timestamps
   created_at: string;

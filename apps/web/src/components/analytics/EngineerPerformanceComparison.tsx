@@ -33,6 +33,17 @@ interface Engineer {
   success_rate: number;
 }
 
+interface EngineerPerformance {
+  engineer_id: string;
+  engineer_name: string;
+  performance_summary: {
+    total_jobs_completed: number;
+    average_rating: number;
+    success_rate: number;
+    revenue_generated: number;
+  };
+}
+
 interface EngineerPerformanceComparisonProps {
   engineers: Engineer[];
   loading?: boolean;
@@ -69,7 +80,7 @@ export function EngineerPerformanceComparison({
   // Sort engineers
   const sortedEngineers = useMemo(() => {
     const sorted = [...engineers].sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
 
       switch (sortField) {
         case 'name':
@@ -92,6 +103,10 @@ export function EngineerPerformanceComparison({
           return 0;
       }
 
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      
       if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
@@ -117,9 +132,9 @@ export function EngineerPerformanceComparison({
     const metrics = ['Jobs', 'Rating', 'Success Rate', 'Revenue'];
     
     return metrics.map(metric => {
-      const dataPoint: any = { metric };
+      const dataPoint: Record<string, string | number> = { metric };
       
-      detailedPerformance.forEach((perf: any) => {
+      detailedPerformance.forEach((perf: EngineerPerformance) => {
         const engineerName = perf.engineer_name.split(' ')[0];
         
         switch (metric) {
@@ -372,7 +387,7 @@ export function EngineerPerformanceComparison({
                     }}
                   />
                   <Legend />
-                  {detailedPerformance.map((perf: any, index: number) => (
+                  {detailedPerformance.map((perf: EngineerPerformance, index: number) => (
                     <Radar
                       key={perf.engineer_id}
                       name={perf.engineer_name.split(' ')[0]}

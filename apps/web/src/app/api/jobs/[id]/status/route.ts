@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
 import { assertPermission } from '@cueron/utils/src/authorization';
+import { preventDemoUserWrites } from '@/lib/demo-data/middleware';
 import type { JobStatus } from '@cueron/types/src/database';
 
 /**
@@ -131,6 +132,10 @@ export async function PATCH(
         401
       );
     }
+
+    // Prevent demo users from performing write operations
+    const demoError = preventDemoUserWrites(session);
+    if (demoError) return demoError;
 
     // Parse request body first (before permission check)
     const body = await request.json();

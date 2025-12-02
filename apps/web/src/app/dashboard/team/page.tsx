@@ -34,14 +34,11 @@ export default function TeamPage() {
 
   // Get agency ID from user profile
   // Handle different profile structures:
-  // 1. Direct agency_id property (engineers and agency_users)
-  // 2. Nested agency.id property (fallback)
+  // 1. Nested agency.id property (primary)
   let agencyId = null;
   
-  // Try to get agencyId from different possible sources
-  if (profile?.agency_id) {
-    agencyId = profile.agency_id;
-  } else if (profile?.agency?.id) {
+  // Try to get agencyId from profile
+  if (profile?.agency?.id) {
     agencyId = profile.agency.id;
   }
 
@@ -50,10 +47,7 @@ export default function TeamPage() {
 
   // Debug agencyId extraction
   console.log('Extracted agencyId:', agencyId);
-  console.log('AgencyId sources:', {
-    direct: profile?.agency_id,
-    nested: profile?.agency?.id
-  });
+  console.log('AgencyId source:', profile?.agency?.id);
   console.log('isAgencyIdValid:', isAgencyIdValid);
 
   const handleEngineerAdded = () => {

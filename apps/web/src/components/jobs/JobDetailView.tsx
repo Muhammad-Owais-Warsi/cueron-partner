@@ -55,8 +55,8 @@ export function JobDetailView({ jobId }: { jobId: string }) {
 
   // Fetch job details
   useEffect(() => {
-    fetchJobDetails();
-  }, [jobId]);
+    void fetchJobDetails();
+  }, [jobId, fetchJobDetails]);
 
   // Update job status from real-time updates
   useEffect(() => {
@@ -65,11 +65,11 @@ export function JobDetailView({ jobId }: { jobId: string }) {
         ...jobData,
         job: {
           ...jobData.job,
-          status: realtimeStatus as any,
+          status: realtimeStatus as Job['status'],
         },
       });
     }
-  }, [realtimeStatus]);
+  }, [realtimeStatus, jobData]);
 
   async function fetchJobDetails() {
     try {
@@ -90,9 +90,9 @@ export function JobDetailView({ jobId }: { jobId: string }) {
       if (data.engineer_distances.length > 0) {
         await fetchEngineers(data.engineer_distances);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching job details:', err);
-      setError(err.message);
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export function JobDetailView({ jobId }: { jobId: string }) {
       if (error) throw error;
 
       // Merge engineer data with distance information
-      const engineersWithDistance: EngineerWithDistance[] = (data || []).map(engineer => {
+      const engineersWithDistance: EngineerWithDistance[] = (data || []).map((engineer: Engineer) => {
         const distanceInfo = distances.find(d => d.engineer_id === engineer.id);
         return {
           ...engineer,
@@ -152,9 +152,9 @@ export function JobDetailView({ jobId }: { jobId: string }) {
       await fetchJobDetails();
       setShowConfirmDialog(false);
       setSelectedEngineerId(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error assigning engineer:', err);
-      alert(`Failed to assign engineer: ${err.message}`);
+      alert(`Failed to assign engineer: ${(err as Error).message}`);
     } finally {
       setAssigning(false);
     }
@@ -426,7 +426,9 @@ export function JobDetailView({ jobId }: { jobId: string }) {
         <AssignmentConfirmDialog
           engineer={engineers.find(e => e.id === selectedEngineerId)!}
           job={job}
-          onConfirm={handleAssignEngineer}
+          onConfirm={async () => {
+            await handleAssignEngineer();
+          }}
           onCancel={() => {
             setShowConfirmDialog(false);
             setSelectedEngineerId(null);

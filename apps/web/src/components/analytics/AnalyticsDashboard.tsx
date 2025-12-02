@@ -23,16 +23,49 @@ interface Trends {
   rating_change: number;
 }
 
+interface JobsTrendData {
+  month: string;
+  completed: number;
+  cancelled: number;
+  total: number;
+}
+
+interface RevenueTrendData {
+  month: string;
+  revenue: number;
+  avg_job_value: number;
+}
+
+interface RatingDistributionData {
+  rating: number;
+  count: number;
+}
+
+interface JobTypeDistributionData {
+  type: string;
+  count: number;
+  percentage: number;
+  [key: string]: string | number;
+}
+
+interface EngineerPerformanceData {
+  engineer_id: string;
+  engineer_name: string;
+  jobs_completed: number;
+  avg_rating: number;
+  success_rate: number;
+}
+
 interface AnalyticsData {
   agency_id: string;
   period: string;
   summary: AnalyticsSummary;
   charts?: {
-    jobs_trend: any[];
-    revenue_trend: any[];
-    rating_distribution: any[];
-    job_type_distribution: any[];
-    engineer_performance: any[];
+    jobs_trend: JobsTrendData[];
+    revenue_trend: RevenueTrendData[];
+    rating_distribution: RatingDistributionData[];
+    job_type_distribution: JobTypeDistributionData[];
+    engineer_performance: EngineerPerformanceData[];
   };
   trends: Trends;
   generated_at: string;

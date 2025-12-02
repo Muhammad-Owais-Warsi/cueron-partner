@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { logError } from '@repo/utils/monitoring';
+// import { logError } from '@repo/utils/monitoring'; // TODO: Implement monitoring utils
 
 interface Props {
   children: ReactNode;
@@ -36,7 +36,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to Sentry
-    logError(error, {
+    // TODO: Implement error logging
+    console.error('Error caught by boundary:', error, {
       extra: {
         componentStack: errorInfo.componentStack,
         errorBoundary: true,

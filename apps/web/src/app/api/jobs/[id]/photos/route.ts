@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getUserSession } from '@/lib/auth/server';
+import { preventDemoUserWrites } from '@/lib/demo-data/middleware';
 import { z } from 'zod';
 
 // Validation schema for photo upload
@@ -36,17 +38,18 @@ export async function POST(
     const jobId = params.id;
 
     // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const session = await getUserSession();
+    
+    if (!session) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
         { status: 401 }
       );
     }
+
+    // Prevent demo users from performing write operations
+    const demoError = preventDemoUserWrites(session);
+    if (demoError) return demoError;
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -135,13 +138,13 @@ export async function POST(
     const { data: engineer } = await supabase
       .from('engineers')
       .select('id, agency_id')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user_id)
       .single();
 
     const { data: agencyUser } = await supabase
       .from('agency_users')
       .select('agency_id')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user_id)
       .single();
 
     const hasAccess =

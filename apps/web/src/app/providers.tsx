@@ -33,7 +33,7 @@ export function Providers({ children }: ProvidersProps): JSX.Element {
     if (typeof window !== 'undefined') {
       initSentry({
         dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
-        environment: (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT as any) || 'development',
+        environment: (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'development') as 'development' | 'staging' | 'production',
         sampleRate: 1.0,
         tracesSampleRate: 0.1,
         enabled: process.env.NODE_ENV === 'production' && !!process.env.NEXT_PUBLIC_SENTRY_DSN,

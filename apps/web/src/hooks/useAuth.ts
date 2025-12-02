@@ -29,6 +29,22 @@ const MOCK_SESSION: Session = {
   user: MOCK_USER,
 };
 
+interface UserProfile {
+  type: 'agency_user' | 'engineer';
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_demo_user?: boolean;
+  agency?: {
+    id: string;
+    name: string;
+    type: string;
+    partnership_tier: string;
+  };
+}
+
 export interface AuthState {
   user: User | null;
   session: Session | null;
@@ -163,7 +179,7 @@ export function useSession() {
  */
 export function useUserProfile() {
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -179,14 +195,15 @@ export function useUserProfile() {
         // Mock implementation - simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Mock profile data
-        const mockProfile = {
+        // Mock profile data with demo flag
+        const mockProfile: UserProfile = {
           type: 'agency_user',
           id: 'mock-profile-id',
           user_id: 'mock-user-id',
           name: 'Developer User',
           email: 'developer@example.com',
           role: 'admin',
+          is_demo_user: false, // Default to false for mock implementation
           agency: {
             id: 'mock-agency-id',
             name: 'Demo Agency',

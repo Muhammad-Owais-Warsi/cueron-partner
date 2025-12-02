@@ -35,12 +35,6 @@ export function JobsListView() {
   const [sortBy, setSortBy] = useState<'urgency' | 'scheduled_time'>('urgency');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    if (profile?.agency?.id) {
-      loadJobs();
-    }
-  }, [profile, page, filters, sortBy, sortOrder]);
-
   const loadJobs = async () => {
     if (!profile?.agency?.id) return;
 
@@ -93,6 +87,12 @@ export function JobsListView() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (profile?.agency?.id) {
+      void loadJobs();
+    }
+  }, [profile, page, filters, sortBy, sortOrder, loadJobs]);
 
   const handleFilterChange = (newFilters: JobFilters) => {
     setFilters(newFilters);

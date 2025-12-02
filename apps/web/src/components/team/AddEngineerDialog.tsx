@@ -113,6 +113,9 @@ export function AddEngineerDialog({ isOpen, onClose, onSuccess, agencyId }: AddE
     onClose();
   };
 
+  // Helper functions for certifications and specializations (currently unused)
+  // Uncomment when implementing certification/specialization UI
+  /*
   const addCertification = () => {
     if (certificationInput.cert_number) {
       setFormData(prev => ({
@@ -153,6 +156,7 @@ export function AddEngineerDialog({ isOpen, onClose, onSuccess, agencyId }: AddE
       specializations: prev.specializations?.filter(s => s !== spec)
     }));
   };
+  */
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

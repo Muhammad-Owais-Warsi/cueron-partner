@@ -121,8 +121,8 @@ export function useLocationTracking(engineerId: string | null, jobId: string | n
       await trackingManagerRef.current.startTracking(engineerId, jobId);
       setIsTracking(true);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError((err as Error).message);
       setIsTracking(false);
     }
   }, [engineerId, jobId]);
@@ -272,7 +272,7 @@ export function usePresence(userId: string | null, userType: 'agency_user' | 'en
  * Hook to subscribe to table changes
  */
 export function useTableChanges<T>(
-  table: string,
+  table: 'notifications' | 'agencies' | 'engineers' | 'jobs' | 'job_status_history' | 'payments' | 'agency_users' | 'fcm_tokens',
   filter: string,
   callbacks: {
     onInsert?: (record: T) => void;
@@ -284,7 +284,7 @@ export function useTableChanges<T>(
     const supabase = createClient();
     const channelManager = getChannelManager(supabase);
 
-    channelManager.subscribeToTableChanges(table as any, filter, {
+    channelManager.subscribeToTableChanges(table, filter, {
       onInsert: callbacks.onInsert ? (payload) => callbacks.onInsert!(payload.new as T) : undefined,
       onUpdate: callbacks.onUpdate ? (payload) => callbacks.onUpdate!(payload.new as T) : undefined,
       onDelete: callbacks.onDelete ? (payload) => callbacks.onDelete!(payload.old as T) : undefined,

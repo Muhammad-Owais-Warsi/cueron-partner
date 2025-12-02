@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { JobFilters, JobStatus } from '@cueron/types';
+import type { JobFilters, JobStatus, Timestamp } from '@cueron/types';
 import { StatusFilter } from './filters/StatusFilter';
 import { DateRangeFilter } from './filters/DateRangeFilter';
 import { LocationFilter } from './filters/LocationFilter';
@@ -28,8 +28,8 @@ export function JobsFilters({ filters, onFilterChange, loading }: JobsFiltersPro
   const handleDateRangeChange = (dateFrom?: string, dateTo?: string) => {
     onFilterChange({
       ...filters,
-      date_from: dateFrom as any,
-      date_to: dateTo as any,
+      date_from: dateFrom as Timestamp | undefined,
+      date_to: dateTo as Timestamp | undefined,
     });
   };
 
@@ -104,8 +104,8 @@ export function JobsFilters({ filters, onFilterChange, loading }: JobsFiltersPro
 
             {/* Date Range Filter */}
             <DateRangeFilter
-              dateFrom={typeof filters.date_from === 'string' ? filters.date_from : filters.date_from?.toISOString().split('T')[0]}
-              dateTo={typeof filters.date_to === 'string' ? filters.date_to : filters.date_to?.toISOString().split('T')[0]}
+              dateFrom={filters.date_from ? new Date(filters.date_from).toISOString().split('T')[0] : undefined}
+              dateTo={filters.date_to ? new Date(filters.date_to).toISOString().split('T')[0] : undefined}
               onChange={handleDateRangeChange}
               disabled={loading}
             />

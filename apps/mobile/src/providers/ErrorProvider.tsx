@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { initSentry } from '@repo/utils/monitoring';
+// import { initSentry } from '@repo/utils/monitoring'; // TODO: Implement monitoring utils
 import { initializeOfflineHandling } from '../lib/offline';
 
 interface ErrorProviderProps {
@@ -14,7 +14,8 @@ interface ErrorProviderProps {
 export function ErrorProvider({ children }: ErrorProviderProps): JSX.Element {
   useEffect(() => {
     // Initialize Sentry
-    initSentry({
+    // TODO: Implement Sentry initialization
+    console.log('Sentry initialization placeholder', {
       dsn: process.env.SENTRY_DSN || '',
       environment: (__DEV__ ? 'development' : 'production') as any,
       sampleRate: 1.0,

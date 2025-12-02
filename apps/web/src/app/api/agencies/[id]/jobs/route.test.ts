@@ -13,15 +13,19 @@
 
 import { GET } from './route';
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getUserSession } from '@/lib/auth';
 
-// Mock dependencies
+// Mock dependencies BEFORE importing them
 jest.mock('@/lib/supabase/server');
-jest.mock('@/lib/auth');
+jest.mock('@/lib/auth/server');
+jest.mock('@/lib/demo-data/generator');
+
+import { createClient } from '@/lib/supabase/server';
+import { getUserSession } from '@/lib/auth/server';
+import { generateJobs } from '@/lib/demo-data/generator';
 
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 const mockGetUserSession = getUserSession as jest.MockedFunction<typeof getUserSession>;
+const mockGenerateJobs = generateJobs as jest.MockedFunction<typeof generateJobs>;
 
 describe('GET /api/agencies/[id]/jobs', () => {
   const mockAgencyId = '550e8400-e29b-41d4-a716-446655440000';
@@ -191,8 +195,6 @@ describe('GET /api/agencies/[id]/jobs', () => {
   describe('Property 13: Job list sorting', () => {
     it('should sort jobs by urgency (emergency > urgent > normal > scheduled) then by scheduled time', async () => {
       // Default mock already returns mockJobs
-      });
-
       const request = new NextRequest(
         `http://localhost:3000/api/agencies/${mockAgencyId}/jobs`
       );
@@ -574,6 +576,256 @@ describe('GET /api/agencies/[id]/jobs', () => {
 
       expect(response.status).toBe(500);
       expect(data.error.code).toBe('DATABASE_ERROR');
+    });
+  });
+
+  describe('Demo User Integration', () => {
+    const demoSession = {
+      user_id: 'demo-user-123',
+      agency_id: mockAgencyId,
+      role: 'admin' as const,
+      is_demo_user: true,
+    };
+
+    const mockDemoJobs = [
+      {
+        id: 'demo-job-1',
+        job_number: 'JOB-01000',
+        client_name: 'Demo Client A',
+        client_phone: '+917123456789',
+        job_type: 'AMC' as const,
+        equipment_type: 'Air Conditioner',
+        site_location: {
+          address: '123 MG Road',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          pincode: '400001',
+          lat: 19.0,
+          lng: 72.8,
+        },
+        status: 'pending' as const,
+        urgency: 'normal' as const,
+        service_fee: 5000,
+        payment_status: 'pending' as const,
+        created_at: '2024-06-01T10:00:00Z',
+        updated_at: '2024-06-01T10:00:00Z',
+        required_skill_level: 3,
+      },
+      {
+        id: 'demo-job-2',
+        job_number: 'JOB-01001',
+        client_name: 'Demo Client B',
+        client_phone: '+917123456790',
+        job_type: 'Repair' as const,
+        equipment_type: 'Refrigerator',
+        site_location: {
+          address: '456 Park Street',
+          city: 'Delhi',
+          state: 'Delhi',
+          pincode: '110001',
+          lat: 28.6,
+          lng: 77.2,
+        },
+        status: 'assigned' as const,
+        urgency: 'urgent' as const,
+        service_fee: 8000,
+        payment_status: 'pending' as const,
+        created_at: '2024-06-02T10:00:00Z',
+        updated_at: '2024-06-02T10:00:00Z',
+        required_skill_level: 4,
+      },
+      {
+        id: 'demo-job-3',
+        job_number: 'JOB-01002',
+        client_name: 'Demo Client C',
+        client_phone: '+917123456791',
+        job_type: 'Emergency' as const,
+        equipment_type: 'Water Heater',
+        site_location: {
+          address: '789 Brigade Road',
+          city: 'Bangalore',
+          state: 'Karnataka',
+          pincode: '560001',
+          lat: 12.9,
+          lng: 77.6,
+        },
+        status: 'completed' as const,
+        urgency: 'emergency' as const,
+        service_fee: 12000,
+        payment_status: 'paid' as const,
+        client_rating: 5 as const,
+        created_at: '2024-06-03T10:00:00Z',
+        updated_at: '2024-06-03T10:00:00Z',
+        required_skill_level: 5,
+      },
+    ];
+
+    beforeEach(() => {
+      mockGenerateJobs.mockReturnValue(mockDemoJobs);
+    });
+
+    it('should serve generated demo data for demo users', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockGenerateJobs).toHaveBeenCalledWith(demoSession.user_id, 100);
+      expect(data.jobs).toHaveLength(3);
+      expect(data.jobs[0].id).toBe('demo-job-3'); // Emergency first
+      expect(data.jobs[1].id).toBe('demo-job-2'); // Urgent second
+      expect(data.jobs[2].id).toBe('demo-job-1'); // Normal last
+      
+      // Verify database was not queried
+      expect(mockCreateClient).not.toHaveBeenCalled();
+    });
+
+    it('should respect pagination parameters for demo data', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?page=1&limit=2`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.jobs).toHaveLength(2);
+      expect(data.pagination.page).toBe(1);
+      expect(data.pagination.limit).toBe(2);
+      expect(data.pagination.total).toBe(3);
+      expect(data.pagination.total_pages).toBe(2);
+      expect(data.pagination.has_next).toBe(true);
+      expect(data.pagination.has_prev).toBe(false);
+    });
+
+    it('should filter demo data by status', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?status=pending`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.jobs).toHaveLength(1);
+      expect(data.jobs[0].status).toBe('pending');
+      expect(data.filters_applied.status).toEqual(['pending']);
+    });
+
+    it('should filter demo data by urgency', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?urgency=emergency,urgent`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.jobs).toHaveLength(2);
+      expect(data.jobs.every((j: any) => ['emergency', 'urgent'].includes(j.urgency))).toBe(true);
+      expect(data.filters_applied.urgency).toEqual(['emergency', 'urgent']);
+    });
+
+    it('should filter demo data by date range', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?date_from=2024-06-02T00:00:00Z&date_to=2024-06-03T23:59:59Z`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.jobs).toHaveLength(2);
+      expect(data.filters_applied.date_from).toBe('2024-06-02T00:00:00Z');
+      expect(data.filters_applied.date_to).toBe('2024-06-03T23:59:59Z');
+    });
+
+    it('should filter demo data by location', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      // Filter for jobs near Delhi (28.6, 77.2) within 100km
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?location_lat=28.6&location_lng=77.2&location_radius_km=100`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      // Should only include demo-job-2 which is in Delhi
+      expect(data.jobs).toHaveLength(1);
+      expect(data.jobs[0].id).toBe('demo-job-2');
+      expect(data.filters_applied.location).toEqual({
+        lat: 28.6,
+        lng: 77.2,
+        radius_km: 100,
+      });
+    });
+
+    it('should combine multiple filters for demo data', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs?status=assigned,completed&urgency=urgent,emergency`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.jobs).toHaveLength(2);
+      // Should include demo-job-2 (assigned, urgent) and demo-job-3 (completed, emergency)
+      expect(data.jobs.some((j: any) => j.id === 'demo-job-2')).toBe(true);
+      expect(data.jobs.some((j: any) => j.id === 'demo-job-3')).toBe(true);
+    });
+
+    it('should maintain deterministic data across requests for same demo user', async () => {
+      mockGetUserSession.mockResolvedValue(demoSession);
+
+      const request1 = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs`
+      );
+      const params1 = Promise.resolve({ id: mockAgencyId });
+
+      const response1 = await GET(request1, { params: params1 });
+      const data1 = await response1.json();
+
+      // Make second request
+      const request2 = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/jobs`
+      );
+      const params2 = Promise.resolve({ id: mockAgencyId });
+
+      const response2 = await GET(request2, { params: params2 });
+      const data2 = await response2.json();
+
+      // Both requests should call generateJobs with same user_id
+      expect(mockGenerateJobs).toHaveBeenCalledTimes(2);
+      expect(mockGenerateJobs).toHaveBeenNthCalledWith(1, demoSession.user_id, 100);
+      expect(mockGenerateJobs).toHaveBeenNthCalledWith(2, demoSession.user_id, 100);
+      
+      // Data should be identical
+      expect(data1.jobs).toEqual(data2.jobs);
     });
   });
 });

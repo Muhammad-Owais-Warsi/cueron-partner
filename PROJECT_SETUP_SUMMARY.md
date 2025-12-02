@@ -217,7 +217,7 @@ Required environment variables (see `apps/mobile/.env.example`):
 
 4. **Continue with Next Task**
    - Task 2: Configure Supabase backend and database
-   - See `.kiro/specs/cueron-partner-platform/tasks.md`
+   - See `.kiro/specs/cueron-partner-platform/s.md`
 
 ## 📚 Documentation
 

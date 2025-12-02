@@ -60,13 +60,13 @@ export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange, onJo
     );
   };
 
-  const handleAcceptJob = async (jobId: string) => {
+  const handleAcceptJob = (jobId: string) => {
     if (onJobStatusChange) {
       onJobStatusChange(jobId, 'accepted');
     }
   };
 
-  const handleRejectJob = async (jobId: string) => {
+  const handleRejectJob = (jobId: string) => {
     if (onJobStatusChange) {
       onJobStatusChange(jobId, 'cancelled');
     }
@@ -203,13 +203,17 @@ export function JobsTable({ jobs, loading, sortBy, sortOrder, onSortChange, onJo
                     {job.status === 'assigned' && job.assigned_engineer_id === profile?.id ? (
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleAcceptJob(job.id)}
+                          onClick={() => {
+                            void handleAcceptJob(job.id);
+                          }}
                           className="text-green-600 hover:text-green-900 font-medium"
                         >
                           Accept
                         </button>
                         <button
-                          onClick={() => handleRejectJob(job.id)}
+                          onClick={() => {
+                            void handleRejectJob(job.id);
+                          }}
                           className="text-red-600 hover:text-red-900 font-medium"
                         >
                           Reject

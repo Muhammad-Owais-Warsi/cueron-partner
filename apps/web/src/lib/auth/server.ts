@@ -12,7 +12,7 @@ import type { Session, User } from '@supabase/supabase-js';
  * Server-side function (use in Server Components, Server Actions, Route Handlers)
  */
 export async function getServerSession(): Promise<Session | null> {
-  const supabase = await createServerClient();
+  const supabase = createServerClient();
   const { data, error } = await supabase.auth.getSession();
 
   if (error) {
@@ -28,7 +28,7 @@ export async function getServerSession(): Promise<Session | null> {
  * Server-side function
  */
 export async function getServerUser(): Promise<User | null> {
-  const supabase = await createServerClient();
+  const supabase = createServerClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error) {
@@ -68,6 +68,7 @@ export interface UserSession {
   user_id: string;
   role: 'admin' | 'manager' | 'viewer' | 'engineer';
   agency_id: string | null;
+  is_demo_user?: boolean;
   email?: string;
   phone?: string;
 }
@@ -77,7 +78,7 @@ export interface UserSession {
  * Server-side function for authorization checks
  */
 export async function getUserSession(): Promise<UserSession | null> {
-  const supabase = await createServerClient();
+  const supabase = createServerClient();
   
   // Get authenticated user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -86,10 +87,10 @@ export async function getUserSession(): Promise<UserSession | null> {
     return null;
   }
 
-  // Get user role and agency from agency_users table
+  // Get user role, agency, and demo flag from agency_users table
   const { data: agencyUser, error: roleError } = await supabase
     .from('agency_users')
-    .select('role, agency_id')
+    .select('role, agency_id, is_demo_user')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -116,6 +117,7 @@ export async function getUserSession(): Promise<UserSession | null> {
         user_id: user.id,
         role: 'engineer',
         agency_id: engineer.agency_id,
+        is_demo_user: false, // Engineers default to non-demo
         email: user.email,
         phone: user.phone,
       };
@@ -129,6 +131,7 @@ export async function getUserSession(): Promise<UserSession | null> {
     user_id: user.id,
     role: agencyUser.role,
     agency_id: agencyUser.agency_id,
+    is_demo_user: agencyUser.is_demo_user ?? false, // Default to false if missing
     email: user.email,
     phone: user.phone,
   };

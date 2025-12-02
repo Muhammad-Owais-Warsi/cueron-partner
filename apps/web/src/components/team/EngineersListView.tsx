@@ -32,7 +32,7 @@ export function EngineersListView({ agencyId: propAgencyId }: EngineersListViewP
   });
 
   // Get agency ID from props or user profile
-  const effectiveAgencyId = propAgencyId || userProfile?.agency_id || null;
+  const effectiveAgencyId = propAgencyId || userProfile?.agency?.id || null;
   
   // Removed strict validation - allow component to work without agency ID
   const isAgencyIdValid = true; // Always true to remove restriction

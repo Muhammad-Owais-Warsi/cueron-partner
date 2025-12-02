@@ -12,6 +12,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { engineerSchema } from '@cueron/utils/src/schemas';
+import { getUserSession } from '@/lib/auth/server';
+import { isDemoUser } from '@/lib/demo-data/middleware';
+import { generateEngineers } from '@/lib/demo-data/generator';
 
 /**
  * GET /api/agencies/{id}/engineers
@@ -22,7 +25,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     
     // Get query parameters
@@ -30,6 +32,52 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
+
+    // Get authenticated user session
+    const session = await getUserSession();
+
+    // Check if this is a demo user and serve generated data
+    if (isDemoUser(session)) {
+      try {
+        // Generate demo engineers (generate more than needed for filtering)
+        const allDemoEngineers = generateEngineers(session!.user_id, 50);
+        
+        // Apply status filter to demo data if provided
+        let filteredEngineers = allDemoEngineers;
+        if (status) {
+          filteredEngineers = filteredEngineers.filter(engineer => 
+            engineer.availability_status === status
+          );
+        }
+
+        // Sort by created_at descending (most recent first)
+        filteredEngineers.sort((a: any, b: any) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        });
+
+        // Apply pagination
+        const totalFiltered = filteredEngineers.length;
+        const paginatedEngineers = filteredEngineers.slice(offset, offset + limit);
+
+        // Build response matching the exact format of real data
+        return NextResponse.json({
+          engineers: paginatedEngineers,
+          pagination: {
+            current_page: page,
+            total_pages: Math.ceil(totalFiltered / limit),
+            total_items: totalFiltered,
+            items_per_page: limit
+          }
+        });
+      } catch (error) {
+        console.error('Error generating demo engineers data:', error);
+        // Fall through to real data query on error
+      }
+    }
+
+    const supabase = await createClient();
 
     // Build query
     let query = supabase

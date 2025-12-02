@@ -12,6 +12,8 @@ import {
   assertPermission, 
   assertAgencyAccess
 } from '@cueron/utils/src/authorization';
+import { isDemoUser } from '@/lib/demo-data/middleware';
+import { generateEarnings } from '@/lib/demo-data/generator';
 
 /**
  * Error response helper
@@ -99,6 +101,26 @@ export async function GET(
         undefined,
         403
       );
+    }
+
+    // Check if this is a demo user and serve generated data
+    if (isDemoUser(session)) {
+      try {
+        const demoData = generateEarnings(session.user_id);
+        
+        // Build response matching the exact format of real data
+        const response = {
+          daily: demoData.daily,
+          monthly: demoData.monthly,
+          yearly: demoData.yearly,
+          generated_at: new Date().toISOString(),
+        };
+
+        return successResponse(response);
+      } catch (error) {
+        console.error('Error generating demo earnings data:', error);
+        // Fall through to real data query on error
+      }
     }
 
     // Create Supabase client

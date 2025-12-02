@@ -36,7 +36,7 @@ export function PaymentSettings() {
   const [error, setError] = useState<string | null>(null);
 
   // Get agency ID from user profile
-  const agencyId = profile?.agency_id || profile?.agency?.id;
+  const agencyId = profile?.agency?.id;
 
   useEffect(() => {
     if (profile && agencyId) {

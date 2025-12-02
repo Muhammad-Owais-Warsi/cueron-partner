@@ -11,8 +11,8 @@ import type { Database } from '@cueron/types';
  * Create a Supabase client for use in Server Components, Server Actions, and Route Handlers
  * This client automatically handles cookie-based authentication
  */
-export async function createClient() {
-  const cookieStore = await cookies();
+export function createClient() {
+  const cookieStore = cookies();
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

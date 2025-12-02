@@ -16,6 +16,8 @@ import {
   assertPermission, 
   assertAgencyAccess
 } from '@cueron/utils/src/authorization';
+import { isDemoUser } from '@/lib/demo-data/middleware';
+import { generateJobs } from '@/lib/demo-data/generator';
 import type { JobStatus, JobUrgency } from '@cueron/types/src/job';
 
 /**
@@ -155,6 +157,112 @@ export async function GET(
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
     const offset = (page - 1) * limit;
+
+    // Check if this is a demo user and serve generated data
+    if (isDemoUser(session)) {
+      try {
+        // Generate demo jobs (generate more than needed for filtering)
+        const allDemoJobs = generateJobs(session.user_id, 100);
+        
+        // Apply filters to demo data
+        let filteredJobs = allDemoJobs;
+
+        // Apply status filter
+        if (statusFilter && statusFilter.length > 0) {
+          filteredJobs = filteredJobs.filter(job => 
+            job.status && statusFilter.includes(job.status)
+          );
+        }
+
+        // Apply urgency filter
+        if (urgencyFilter && urgencyFilter.length > 0) {
+          filteredJobs = filteredJobs.filter(job => 
+            job.urgency && urgencyFilter.includes(job.urgency)
+          );
+        }
+
+        // Apply date range filter
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          filteredJobs = filteredJobs.filter(job => 
+            job.created_at && new Date(job.created_at) >= fromDate
+          );
+        }
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          filteredJobs = filteredJobs.filter(job => 
+            job.created_at && new Date(job.created_at) <= toDate
+          );
+        }
+
+        // Apply location filter if provided
+        const hasLocationFilter = locationLat && locationLng && locationRadiusKm;
+        if (hasLocationFilter) {
+          const lat = parseFloat(locationLat);
+          const lng = parseFloat(locationLng);
+          const radiusKm = parseFloat(locationRadiusKm);
+
+          filteredJobs = filteredJobs.filter(job => {
+            if (!job.site_location?.lat || !job.site_location?.lng) {
+              return false;
+            }
+            const distance = calculateDistance(
+              lat,
+              lng,
+              job.site_location.lat,
+              job.site_location.lng
+            );
+            return distance <= radiusKm;
+          });
+        }
+
+        // Sort by urgency and scheduled time
+        filteredJobs.sort((a: any, b: any) => {
+          const urgencyDiff = URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
+          if (urgencyDiff !== 0) {
+            return urgencyDiff;
+          }
+          const aTime = a.scheduled_time ? new Date(a.scheduled_time).getTime() : 
+                        a.created_at ? new Date(a.created_at).getTime() : Infinity;
+          const bTime = b.scheduled_time ? new Date(b.scheduled_time).getTime() : 
+                        b.created_at ? new Date(b.created_at).getTime() : Infinity;
+          return aTime - bTime;
+        });
+
+        // Apply pagination
+        const totalFiltered = filteredJobs.length;
+        const paginatedJobs = filteredJobs.slice(offset, offset + limit);
+
+        // Build response matching the exact format of real data
+        const response = {
+          jobs: paginatedJobs,
+          pagination: {
+            page,
+            limit,
+            total: totalFiltered,
+            total_pages: Math.ceil(totalFiltered / limit),
+            has_next: page < Math.ceil(totalFiltered / limit),
+            has_prev: page > 1,
+          },
+          filters_applied: {
+            status: statusFilter,
+            urgency: urgencyFilter,
+            date_from: dateFrom,
+            date_to: dateTo,
+            location: hasLocationFilter ? {
+              lat: parseFloat(locationLat!),
+              lng: parseFloat(locationLng!),
+              radius_km: parseFloat(locationRadiusKm!),
+            } : null,
+          },
+        };
+
+        return successResponse(response);
+      } catch (error) {
+        console.error('Error generating demo jobs data:', error);
+        // Fall through to real data query on error
+      }
+    }
 
     // Validate filters
     const validStatuses: JobStatus[] = [

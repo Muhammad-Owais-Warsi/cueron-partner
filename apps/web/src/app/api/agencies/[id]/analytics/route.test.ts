@@ -6,15 +6,22 @@
 
 import { NextRequest } from 'next/server';
 import { GET } from './route';
-import { getUserSession } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
 
-// Mock dependencies
-jest.mock('@/lib/auth');
+// Mock dependencies BEFORE importing them
+jest.mock('@/lib/auth/server');
 jest.mock('@/lib/supabase/server');
+jest.mock('@/lib/demo-data/middleware');
+jest.mock('@/lib/demo-data/generator');
+
+import { getUserSession } from '@/lib/auth/server';
+import { createClient } from '@/lib/supabase/server';
+import { isDemoUser } from '@/lib/demo-data/middleware';
+import { generateDashboardData } from '@/lib/demo-data/generator';
 
 const mockGetUserSession = getUserSession as jest.MockedFunction<typeof getUserSession>;
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
+const mockIsDemoUser = isDemoUser as jest.MockedFunction<typeof isDemoUser>;
+const mockGenerateDashboardData = generateDashboardData as jest.MockedFunction<typeof generateDashboardData>;
 
 describe('GET /api/agencies/[id]/analytics', () => {
   const mockAgencyId = '123e4567-e89b-12d3-a456-426614174000';
@@ -36,6 +43,9 @@ describe('GET /api/agencies/[id]/analytics', () => {
     };
 
     mockCreateClient.mockResolvedValue(mockSupabaseClient);
+    
+    // Default: not a demo user
+    mockIsDemoUser.mockReturnValue(false);
   });
 
   describe('Authentication and Authorization', () => {
@@ -541,6 +551,222 @@ describe('GET /api/agencies/[id]/analytics', () => {
       expect(response.status).toBe(200);
       expect(data.summary.total_jobs_completed).toBe(0);
       expect(data.summary.total_revenue).toBe(0);
+    });
+  });
+
+  describe('Demo User Integration', () => {
+    beforeEach(() => {
+      mockGetUserSession.mockResolvedValue({
+        user_id: mockUserId,
+        agency_id: mockAgencyId,
+        role: 'admin',
+        is_demo_user: true,
+      });
+    });
+
+    it('should serve generated demo data for demo users', async () => {
+      mockIsDemoUser.mockReturnValue(true);
+      
+      const mockDemoData = {
+        summary: {
+          total_jobs_completed: 500,
+          total_revenue: 2500000,
+          avg_rating: 4.5,
+          total_engineers: 25,
+          active_engineers: 18,
+        },
+        charts: {
+          jobs_trend: [
+            { month: 'Jul 2024', completed: 80, cancelled: 5, total: 85 },
+            { month: 'Aug 2024', completed: 90, cancelled: 3, total: 93 },
+          ],
+          revenue_trend: [
+            { month: 'Jul 2024', revenue: 400000, avg_job_value: 5000 },
+            { month: 'Aug 2024', revenue: 450000, avg_job_value: 5000 },
+          ],
+          rating_distribution: [
+            { rating: 5, count: 50 },
+            { rating: 4, count: 30 },
+            { rating: 3, count: 10 },
+            { rating: 2, count: 5 },
+            { rating: 1, count: 5 },
+          ],
+          job_type_distribution: [
+            { type: 'AMC', count: 40, percentage: 40 },
+            { type: 'Repair', count: 30, percentage: 30 },
+            { type: 'Installation', count: 20, percentage: 20 },
+            { type: 'Emergency', count: 10, percentage: 10 },
+          ],
+        },
+        trends: {
+          jobs_growth: 15.5,
+          revenue_growth: 12.5,
+          rating_change: 0.1,
+        },
+      };
+
+      mockGenerateDashboardData.mockReturnValue(mockDemoData);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/analytics`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockIsDemoUser).toHaveBeenCalled();
+      expect(mockGenerateDashboardData).toHaveBeenCalledWith(mockUserId, '6months');
+      expect(data.summary).toEqual(mockDemoData.summary);
+      expect(data.charts.jobs_trend).toEqual(mockDemoData.charts.jobs_trend);
+      expect(data.trends).toEqual(mockDemoData.trends);
+      expect(data.agency_id).toBe(mockAgencyId);
+      expect(data.period).toBe('6months');
+    });
+
+    it('should respect period parameter for demo users', async () => {
+      mockIsDemoUser.mockReturnValue(true);
+      
+      const mockDemoData = {
+        summary: {
+          total_jobs_completed: 500,
+          total_revenue: 2500000,
+          avg_rating: 4.5,
+          total_engineers: 25,
+          active_engineers: 18,
+        },
+        charts: {
+          jobs_trend: [],
+          revenue_trend: [],
+          rating_distribution: [],
+          job_type_distribution: [],
+        },
+        trends: {
+          jobs_growth: 15.5,
+          revenue_growth: 12.5,
+          rating_change: 0.1,
+        },
+      };
+
+      mockGenerateDashboardData.mockReturnValue(mockDemoData);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/analytics?period=1year`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockGenerateDashboardData).toHaveBeenCalledWith(mockUserId, '1year');
+      expect(data.period).toBe('1year');
+    });
+
+    it('should exclude charts when includeCharts is false for demo users', async () => {
+      mockIsDemoUser.mockReturnValue(true);
+      
+      const mockDemoData = {
+        summary: {
+          total_jobs_completed: 500,
+          total_revenue: 2500000,
+          avg_rating: 4.5,
+          total_engineers: 25,
+          active_engineers: 18,
+        },
+        charts: {
+          jobs_trend: [],
+          revenue_trend: [],
+          rating_distribution: [],
+          job_type_distribution: [],
+        },
+        trends: {
+          jobs_growth: 15.5,
+          revenue_growth: 12.5,
+          rating_change: 0.1,
+        },
+      };
+
+      mockGenerateDashboardData.mockReturnValue(mockDemoData);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/analytics?includeCharts=false`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.charts).toBeUndefined();
+      expect(data.summary).toBeDefined();
+      expect(data.trends).toBeDefined();
+    });
+
+    it('should fall back to real data if demo data generation fails', async () => {
+      mockIsDemoUser.mockReturnValue(true);
+      mockGenerateDashboardData.mockImplementation(() => {
+        throw new Error('Demo data generation failed');
+      });
+
+      // Mock real data query
+      mockSupabaseClient.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/analytics`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockGenerateDashboardData).toHaveBeenCalled();
+      // Should fall back to real data query
+      expect(mockSupabaseClient.from).toHaveBeenCalled();
+    });
+
+    it('should not query database for demo users', async () => {
+      mockIsDemoUser.mockReturnValue(true);
+      
+      const mockDemoData = {
+        summary: {
+          total_jobs_completed: 500,
+          total_revenue: 2500000,
+          avg_rating: 4.5,
+          total_engineers: 25,
+          active_engineers: 18,
+        },
+        charts: {
+          jobs_trend: [],
+          revenue_trend: [],
+          rating_distribution: [],
+          job_type_distribution: [],
+        },
+        trends: {
+          jobs_growth: 15.5,
+          revenue_growth: 12.5,
+          rating_change: 0.1,
+        },
+      };
+
+      mockGenerateDashboardData.mockReturnValue(mockDemoData);
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/agencies/${mockAgencyId}/analytics`
+      );
+      const params = Promise.resolve({ id: mockAgencyId });
+
+      const response = await GET(request, { params });
+
+      expect(response.status).toBe(200);
+      expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
   });
 });
