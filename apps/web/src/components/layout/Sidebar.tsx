@@ -203,6 +203,7 @@ export function Sidebar({
         </div>
 
         <div className="flex w-full grow flex-col gap-y-4 overflow-y-auto bg-background px-4 pb-4 pt-12">
+          {' '}
           <div className="flex h-10 shrink-0 items-center">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -217,7 +218,6 @@ export function Sidebar({
               </span>
             </div>
           </div>
-
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-4">
               <li>
