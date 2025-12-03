@@ -5,7 +5,6 @@
  */
 
 import { createClient } from '../supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
 
 /**
  * Send magic link to email (REAL IMPLEMENTATION)
