@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginForm } from '@/components/auth/LoginForm';
+import { LoginForm } from '@/components/auth/login-form';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
@@ -53,38 +53,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Cueron Partner</h2>
-          <p className="text-sm text-gray-600">Agency Management Platform</p>
-        </div>
-
-        {/* Authentication Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <LoginForm />
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-xs text-gray-500">
-          <p>© 2025 Cueron. All rights reserved.</p>
-        </div>
+    <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm md:max-w-4xl">
+        <LoginForm />
+      </div>
+      <div className="mt-8 text-center text-xs text-gray-500">
+        <p>© 2025 Cueron. All rights reserved.</p>
       </div>
     </div>
   );

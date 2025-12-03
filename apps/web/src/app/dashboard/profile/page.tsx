@@ -2,10 +2,10 @@
 
 /**
  * User Profile Page
- * 
+ *
  * User profile management page for individual users to manage their personal information
  * and preferences.
- * 
+ *
  * Requirements: 1.1, 14.1
  */
 
@@ -42,7 +42,7 @@ export default function ProfilePage() {
     <DashboardLayout>
       <div className="p-6">
         <div className="mb-6">
-         {/* <h1 className="text-2xl font-bold text-gray-900">My Profile</h1> */}
+          {/* <h1 className="text-2xl font-bold text-gray-900">My Profile</h1> */}
           <p className="text-gray-600 mt-1">Manage your personal information and preferences</p>
         </div>
 
@@ -56,11 +56,11 @@ export default function ProfilePage() {
                   {user.user_metadata?.name || user.email}
                 </h2>
                 <p className="text-gray-600">
-                  {profile?.type === 'engineer' 
-                    ? `Engineer at ${profile.agency?.name || 'Agency'}` 
-                    : profile?.type === 'agency_user' 
-                    ? `${profile.role} at ${profile.agency?.name || 'Agency'}` 
-                    : 'User'}
+                  {profile?.type === 'engineer'
+                    ? `Engineer at ${profile.agency?.name || 'Agency'}`
+                    : profile?.type === 'agency_user'
+                      ? `${profile.role} at ${profile.agency?.name || 'Agency'}`
+                      : 'User'}
                 </p>
               </div>
             </div>
@@ -132,40 +132,32 @@ function PersonalInfoSection({ user }: PersonalInfoSectionProps) {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
             <input
               type="email"
               value={formData.email}
               readOnly
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Email cannot be changed
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={10}
             />
@@ -219,12 +211,10 @@ function PreferencesSection() {
         <h3 className="text-lg font-medium text-gray-900 mb-4">Display Preferences</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Theme
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
             <select
               value={preferences.theme}
-              onChange={(e) => setPreferences(prev => ({ ...prev, theme: e.target.value }))}
+              onChange={(e) => setPreferences((prev) => ({ ...prev, theme: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="light">Light</option>
@@ -233,12 +223,10 @@ function PreferencesSection() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Language
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
             <select
               value={preferences.language}
-              onChange={(e) => setPreferences(prev => ({ ...prev, language: e.target.value }))}
+              onChange={(e) => setPreferences((prev) => ({ ...prev, language: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="en">English</option>
@@ -247,12 +235,10 @@ function PreferencesSection() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Timezone
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
             <select
               value={preferences.timezone}
-              onChange={(e) => setPreferences(prev => ({ ...prev, timezone: e.target.value }))}
+              onChange={(e) => setPreferences((prev) => ({ ...prev, timezone: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="Asia/Kolkata">India (IST)</option>
