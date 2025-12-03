@@ -4,9 +4,6 @@
  */
 
 import { createClient } from '../supabase/client';
-import { createClient as createServerClient } from '../supabase/server';
-import { formatPhoneNumber, validatePhoneNumber, validateOTP } from '@cueron/utils';
-import type { Session, User } from '@supabase/supabase-js';
 
 /**
  * Send OTP to phone number
@@ -158,34 +155,6 @@ export async function signOut() {
 }
 
 /**
-<<<<<<< HEAD
- * Verify OTP code (REAL IMPLEMENTATION)
- * Client-side function
- */
-export async function verifyOTP(email: string, otp: string) {
-  if (!email || !email.includes('@')) {
-    throw new Error('Email is required');
-  }
-
-  if (!otp || otp.length !== 6) {
-    throw new Error('OTP must be 6 digits');
-  }
-
-  const supabase = createClient();
-  
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token: otp,
-    type: 'magiclink',
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
-}
-=======
  * Server-side authentication functions
  */
 
@@ -315,4 +284,3 @@ export async function getUserSession(): Promise<UserSession | null> {
     phone: user.phone,
   };
 }
->>>>>>> parent of b68dd87 (fixes)
