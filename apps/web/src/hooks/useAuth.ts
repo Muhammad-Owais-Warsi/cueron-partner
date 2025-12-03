@@ -2,32 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
-
-// Mock user data for development
-const MOCK_USER: User = {
-  id: 'mock-user-id',
-  app_metadata: {},
-  user_metadata: {
-    email: 'developer@example.com',
-    name: 'Developer User',
-  },
-  aud: 'authenticated',
-  created_at: new Date().toISOString(),
-  email: 'developer@example.com',
-  email_confirmed_at: new Date().toISOString(),
-  phone: '',
-  role: 'authenticated',
-  updated_at: new Date().toISOString(),
-};
-
-const MOCK_SESSION: Session = {
-  access_token: 'mock-access-token',
-  refresh_token: 'mock-refresh-token',
-  expires_in: 3600,
-  token_type: 'bearer',
-  user: MOCK_USER,
-};
 
 interface UserProfile {
   type: 'agency_user' | 'engineer';
@@ -65,50 +41,51 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    // Check for mock session in localStorage
-    const hasMockSession = localStorage.getItem('mock-auth-session') === 'true';
+    const supabase = createClient();
     
-    if (hasMockSession) {
-      setState({
-        user: MOCK_USER,
-        session: MOCK_SESSION,
-        loading: false,
-        error: null,
-      });
-    } else {
-      setState({
-        user: null,
-        session: null,
-        loading: false,
-        error: null,
-      });
-    }
-
-    // Listen for storage changes (simulating auth state changes)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'mock-auth-session') {
-        if (e.newValue === 'true') {
-          setState({
-            user: MOCK_USER,
-            session: MOCK_SESSION,
+    // Get initial session
+    const getSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          setState(prev => ({
+            ...prev,
+            error,
             loading: false,
-            error: null,
-          });
-        } else {
-          setState({
-            user: null,
-            session: null,
-            loading: false,
-            error: null,
-          });
+          }));
+          return;
         }
+        
+        setState(prev => ({
+          ...prev,
+          session,
+          user: session?.user ?? null,
+          loading: false,
+        }));
+      } catch (error) {
+        setState(prev => ({
+          ...prev,
+          error: error instanceof Error ? error : new Error('Unknown error'),
+          loading: false,
+        }));
       }
     };
-
-    window.addEventListener('storage', handleStorageChange);
-
+    
+    getSession();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setState(prev => ({
+        ...prev,
+        session,
+        user: session?.user ?? null,
+        loading: false,
+      }));
+    });
+    
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -141,25 +118,25 @@ export function useSession() {
   const router = useRouter();
 
   const refreshSession = async () => {
-    // Mock implementation - simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.refreshSession();
     
-    // For demo purposes, return a mock session
-    const hasSession = localStorage.getItem('mock-auth-session') === 'true';
-    
-    if (hasSession) {
-      return MOCK_SESSION;
+    if (error) {
+      console.warn('Session refresh warning:', error.message);
+      return null;
     }
     
-    return null;
+    return data.session;
   };
 
   const signOut = async () => {
-    // Mock implementation - simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
     
-    // Clear mock session
-    localStorage.removeItem('mock-auth-session');
+    // Even if there's an error (like no session), still redirect to login
+    if (error) {
+      console.warn('Sign out warning:', error.message);
+    }
     
     router.push('/login');
     router.refresh();
@@ -192,27 +169,67 @@ export function useUserProfile() {
 
     const fetchProfile = async () => {
       try {
-        // Mock implementation - simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const supabase = createClient();
         
-        // Mock profile data with demo flag
-        const mockProfile: UserProfile = {
+        // Fetch user profile from agency_users table
+        const { data: agencyUser, error: agencyUserError } = await supabase
+          .from('agency_users')
+          .select(`
+            id,
+            role,
+            name,
+            email,
+            is_demo_user,
+            agencies (
+              id,
+              name,
+              type,
+              partnership_tier
+            )
+          `)
+          .eq('user_id', user.id)
+          .single();
+        
+        if (agencyUserError) {
+          console.error('Error fetching agency user:', agencyUserError);
+          throw new Error('Failed to fetch user profile');
+        }
+        
+        if (!agencyUser) {
+          // User exists but has no agency association
+          const userProfile: UserProfile = {
+            type: 'agency_user',
+            id: user.id,
+            user_id: user.id,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+            email: user.email || '',
+            role: 'user',
+            is_demo_user: false,
+            agency: undefined,
+          };
+          
+          setProfile(userProfile);
+          setLoading(false);
+          return;
+        }
+        
+        const userProfile: UserProfile = {
           type: 'agency_user',
-          id: 'mock-profile-id',
-          user_id: 'mock-user-id',
-          name: 'Developer User',
-          email: 'developer@example.com',
-          role: 'admin',
-          is_demo_user: false, // Default to false for mock implementation
-          agency: {
-            id: 'mock-agency-id',
-            name: 'Demo Agency',
-            type: 'premium',
-            partnership_tier: 'gold',
-          },
+          id: agencyUser.id,
+          user_id: user.id,
+          name: agencyUser.name,
+          email: agencyUser.email,
+          role: agencyUser.role,
+          is_demo_user: agencyUser.is_demo_user ?? false,
+          agency: agencyUser.agencies && agencyUser.agencies.length > 0 ? {
+            id: agencyUser.agencies[0].id,
+            name: agencyUser.agencies[0].name,
+            type: agencyUser.agencies[0].type,
+            partnership_tier: agencyUser.agencies[0].partnership_tier,
+          } : undefined,
         };
 
-        setProfile(mockProfile);
+        setProfile(userProfile);
         setLoading(false);
       } catch (err) {
         console.error('Error in fetchProfile:', err);

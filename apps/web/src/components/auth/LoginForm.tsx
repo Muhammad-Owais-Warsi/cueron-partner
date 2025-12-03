@@ -36,13 +36,11 @@ export function LoginForm({ onEmailSent }: LoginFormProps) {
         }
 
         await signInWithEmailAndPassword(email, password);
-        // Set mock session
-        localStorage.setItem('mock-auth-session', 'true');
         // Redirect to dashboard
         router.push('/dashboard');
         router.refresh();
       } else {
-        // Email magic link authentication (mock)
+        // Email magic link authentication
         await sendMagicLink(email);
         setEmailSent(true);
         setSuccess('Check your email for the magic link!');
@@ -141,7 +139,7 @@ export function LoginForm({ onEmailSent }: LoginFormProps) {
               disabled={loading}
             />
             <p className="mt-1 text-xs text-gray-500">
-              For demo: use any email with password "password123"
+              Enter your email and password to sign in
             </p>
           </div>
         )}
