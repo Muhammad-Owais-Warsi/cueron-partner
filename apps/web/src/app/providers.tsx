@@ -1,7 +1,6 @@
 'use client';
 
-import React, { ReactNode, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React, { ReactNode, useEffect } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/components/Toast';
 import { initSentry } from '@cueron/utils';
@@ -12,22 +11,9 @@ interface ProvidersProps {
 
 /**
  * Root providers component that wraps the entire application
- * Includes error boundary, toast notifications, React Query, and Sentry initialization
+ * Includes error boundary, toast notifications, and Sentry initialization
  */
 export function Providers({ children }: ProvidersProps): JSX.Element {
-  // Create QueryClient instance in state to ensure it's stable across renders
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000, // 1 minute
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
-
   useEffect(() => {
     // Initialize Sentry on client side
     if (typeof window !== 'undefined') {
@@ -43,11 +29,9 @@ export function Providers({ children }: ProvidersProps): JSX.Element {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
-      </QueryClientProvider>
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
