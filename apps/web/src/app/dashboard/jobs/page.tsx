@@ -1,5 +1,8 @@
 'use client';
 
+// Add dynamic = 'force-client' to prevent static generation issues
+export const dynamic = 'force-dynamic';
+
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout';
 import { JobsListView } from '@/components/jobs/JobsListView';

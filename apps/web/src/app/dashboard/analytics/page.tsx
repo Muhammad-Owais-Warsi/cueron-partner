@@ -13,7 +13,7 @@ import { EngineerPerformanceComparison } from '@/components/analytics/EngineerPe
 import { ReportExportInterface } from '@/components/analytics/ReportExportInterface';
 import { MonthlyReportPreview } from '@/components/analytics/MonthlyReportPreview';
 import { useUserProfile } from '@/hooks/useAuth';
-import { DashboardLayout } from '@/components/layout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 type TabType = 'overview' | 'engineers' | 'reports';
 
