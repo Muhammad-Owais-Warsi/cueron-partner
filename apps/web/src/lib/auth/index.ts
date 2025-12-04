@@ -6,26 +6,27 @@
 import { createClient } from '../supabase/client';
 
 /**
- * Send OTP to phone number
+
+/**
+ * Send magic link to email (REAL IMPLEMENTATION)
  * Client-side function
  */
-export async function sendOTP(phone: string) {
-  if (!validatePhoneNumber(phone)) {
-    throw new Error('Invalid phone number format');
+export async function sendMagicLink(email: string) {
+  if (!email || !email.includes('@')) {
+    throw new Error('Invalid email format');
   }
 
-  const formattedPhone = formatPhoneNumber(phone);
   const supabase = createClient();
 
   const { data, error } = await supabase.auth.signInWithOtp({
-    phone: formattedPhone,
+    email,
     options: {
-      channel: 'sms',
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
     },
   });
 
   if (error) {
-    throw new Error(`Failed to send OTP: ${error.message}`);
+    throw new Error(error.message);
   }
 
   return data;
@@ -45,7 +46,7 @@ export async function signInWithEmailAndPassword(email: string, password: string
   }
 
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -72,7 +73,7 @@ export async function signUpWithEmailAndPassword(email: string, password: string
   }
 
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -94,14 +95,14 @@ export async function signUpWithEmailAndPassword(email: string, password: string
  */
 export async function getSession() {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.auth.getSession();
-  
+
   if (error) {
     console.error('Error getting session:', error);
     return null;
   }
-  
+
   return data.session;
 }
 
@@ -111,14 +112,14 @@ export async function getSession() {
  */
 export async function getCurrentUser() {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.auth.getUser();
-  
+
   if (error) {
     console.error('Error getting user:', error);
     return null;
   }
-  
+
   return data.user;
 }
 
@@ -128,14 +129,14 @@ export async function getCurrentUser() {
  */
 export async function refreshSession() {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.auth.refreshSession();
-  
+
   if (error) {
     console.error('Error refreshing session:', error);
     return null;
   }
-  
+
   return data.session;
 }
 
@@ -145,9 +146,9 @@ export async function refreshSession() {
  */
 export async function signOut() {
   const supabase = createClient();
-  
+
   const { error } = await supabase.auth.signOut();
-  
+
   if (error) {
     console.error('Error signing out:', error);
     throw new Error(error.message);
@@ -229,10 +230,13 @@ export interface UserSession {
  */
 export async function getUserSession(): Promise<UserSession | null> {
   const supabase = await createServerClient();
-  
+
   // Get authenticated user
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
   if (userError || !user) {
     return null;
   }
