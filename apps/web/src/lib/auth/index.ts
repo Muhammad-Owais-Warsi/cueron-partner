@@ -4,6 +4,36 @@
  */
 
 import { createClient } from '../supabase/client';
+import { formatPhoneNumber, validatePhoneNumber, validateOTP } from '@cueron/utils';
+import type { Session, User } from '@supabase/supabase-js';
+
+/*
+ * Verify OTP code (REAL IMPLEMENTATION)
+ * Client-side function
+ */
+export async function verifyOTP(email: string, otp: string) {
+  if (!email || !email.includes('@')) {
+    throw new Error('Email is required');
+  }
+
+  if (!otp || otp.length !== 6) {
+    throw new Error('OTP must be 6 digits');
+  }
+
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: otp,
+    type: 'magiclink',
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
 
 /**
 

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { DashboardLayout } from '@/components/layout';
 import { JobDetailView } from '@/components/jobs/JobDetailView';
 
 function JobDetailPageContent() {
@@ -27,35 +26,27 @@ function JobDetailPageContent() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading job details...</div>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-600">Loading job details...</div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-64">
-          <div className="text-red-600 mb-4">{error}</div>
-          <button
-            onClick={() => router.push('/dashboard/jobs')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Back to Jobs
-          </button>
-        </div>
-      </DashboardLayout>
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button
+          onClick={() => router.push('/dashboard/jobs')}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Back to Jobs
+        </button>
+      </div>
     );
   }
 
-  return (
-    <DashboardLayout>
-      <JobDetailView jobId={jobId} />
-    </DashboardLayout>
-  );
+  return <JobDetailView jobId={jobId} />;
 }
 
 export default function JobDetailPage() {

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { ToastProvider } from '@/components/Toast';
 import { initSentry } from '@cueron/utils';
 
 interface ProvidersProps {
@@ -14,12 +14,28 @@ interface ProvidersProps {
  * Includes error boundary, toast notifications, and Sentry initialization
  */
 export function Providers({ children }: ProvidersProps): JSX.Element {
+  // Create QueryClient on the client side
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+
   useEffect(() => {
     // Initialize Sentry on client side
     if (typeof window !== 'undefined') {
       initSentry({
         dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
-        environment: (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'development') as 'development' | 'staging' | 'production',
+        environment: (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'development') as
+          | 'development'
+          | 'staging'
+          | 'production',
         sampleRate: 1.0,
         tracesSampleRate: 0.1,
         enabled: process.env.NODE_ENV === 'production' && !!process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -28,10 +44,8 @@ export function Providers({ children }: ProvidersProps): JSX.Element {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        {children}
-      </ToastProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </QueryClientProvider>
   );
 }

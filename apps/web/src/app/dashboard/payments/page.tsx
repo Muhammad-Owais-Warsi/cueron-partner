@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { DashboardLayout } from '@/components/layout';
 import { useUserProfile } from '@/hooks/useAuth';
 
 interface Payment {
@@ -32,18 +31,18 @@ function PaymentsContent() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const queryParams = new URLSearchParams();
       if (filter !== 'all') {
         queryParams.append('status', filter);
       }
-      
+
       const response = await fetch(`/api/agencies/${agencyId}/payments?${queryParams}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to load payments');
       }
-      
+
       const data = await response.json();
       setPayments(data.payments || []);
     } catch (err) {
@@ -102,7 +101,7 @@ function PaymentsContent() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
         <p className="text-gray-600 mt-1">
@@ -171,7 +170,10 @@ function PaymentsContent() {
         <div className="bg-white shadow rounded-lg p-6">
           <div className="animate-pulse space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between py-4 border-b border-gray-100">
+              <div
+                key={i}
+                className="flex items-center justify-between py-4 border-b border-gray-100"
+              >
                 <div className="flex items-center space-x-4">
                   <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
                   <div>
@@ -335,7 +337,7 @@ function PaymentsContent() {
           )}
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

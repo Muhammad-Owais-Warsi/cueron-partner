@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { sendMagicLink, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '@/lib/auth';
@@ -86,7 +84,7 @@ export function LoginForm({ onEmailSent }: LoginFormProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="overflow-hidden p-0">
+      <Card className="overflow-hidden p-0 shadow-none border-none">
         <CardContent className="grid p-0 md:grid-cols-2">
           <div className="p-6 md:p-8">
             <div className="flex flex-col items-center gap-2 text-center mb-8">

@@ -11,7 +11,6 @@
 
 import { useState } from 'react';
 import { useAuth, useUserProfile } from '@/hooks/useAuth';
-import { DashboardLayout } from '@/components/layout';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -20,26 +19,22 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <DashboardLayout>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-800">Please log in to view your profile.</p>
-        </div>
-      </DashboardLayout>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">Please log in to view your profile.</p>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="p-6">
         <div className="mb-6">
           {/* <h1 className="text-2xl font-bold text-gray-900">My Profile</h1> */}
@@ -105,7 +100,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }
 
