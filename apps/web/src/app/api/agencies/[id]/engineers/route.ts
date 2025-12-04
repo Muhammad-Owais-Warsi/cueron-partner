@@ -2,10 +2,10 @@
  * Agency Engineers Management API Route
  * GET /api/agencies/{id}/engineers - List engineers for an agency
  * POST /api/agencies/{id}/engineers - Add a new engineer to an agency
- * 
+ *
  * Handles engineer listing with filtering and pagination,
  * and engineer creation with validation.
- * 
+ *
  * Requirements: 2.1, 2.2, 2.3, 2.4
  */
 
@@ -20,13 +20,10 @@ import { generateEngineers } from '@/lib/demo-data/generator';
  * GET /api/agencies/{id}/engineers
  * List all engineers for a specific agency with optional filtering
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Get query parameters
     const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
@@ -41,12 +38,12 @@ export async function GET(
       try {
         // Generate demo engineers (generate more than needed for filtering)
         const allDemoEngineers = generateEngineers(session!.user_id, 50);
-        
+
         // Apply status filter to demo data if provided
         let filteredEngineers = allDemoEngineers;
         if (status) {
-          filteredEngineers = filteredEngineers.filter(engineer => 
-            engineer.availability_status === status
+          filteredEngineers = filteredEngineers.filter(
+            (engineer) => engineer.availability_status === status
           );
         }
 
@@ -68,8 +65,8 @@ export async function GET(
             current_page: page,
             total_pages: Math.ceil(totalFiltered / limit),
             total_items: totalFiltered,
-            items_per_page: limit
-          }
+            items_per_page: limit,
+          },
         });
       } catch (error) {
         console.error('Error generating demo engineers data:', error);
@@ -92,8 +89,7 @@ export async function GET(
     }
 
     // Apply pagination
-    const { data: engineers, count, error } = await query
-      .range(offset, offset + limit - 1);
+    const { data: engineers, count, error } = await query.range(offset, offset + limit - 1);
 
     if (error) throw error;
 
@@ -103,15 +99,12 @@ export async function GET(
         current_page: page,
         total_pages: Math.ceil((count || 0) / limit),
         total_items: count,
-        items_per_page: limit
-      }
+        items_per_page: limit,
+      },
     });
   } catch (error) {
     console.error('Error fetching engineers:', error);
-    return NextResponse.json(
-      { error: { message: 'Failed to fetch engineers' } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: { message: 'Failed to fetch engineers' } }, { status: 500 });
   }
 }
 
@@ -119,20 +112,17 @@ export async function GET(
  * POST /api/agencies/{id}/engineers
  * Add a new engineer to an agency
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Use admin client to bypass RLS for development
     const supabase = await createAdminClient();
-    
+
     // Parse request body
     const body = await request.json();
-    
+
     // Allow 'unknown' as agency ID when removing restrictions
     const agencyId = params.id === 'unknown' ? body.agency_id || '' : params.id;
-    
+
     // Prepare data for validation - exclude agency_id if it's empty
     const validationData = { ...body };
     if (params.id === 'unknown' && !body.agency_id) {
@@ -145,7 +135,7 @@ export async function POST(
       // Use the agency ID from the URL parameter
       validationData.agency_id = params.id;
     }
-    
+
     // Validate input
     const validation = engineerSchema.safeParse(validationData);
 
@@ -155,8 +145,8 @@ export async function POST(
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid engineer data',
-            details: validation.error.flatten().fieldErrors
-          }
+            details: validation.error.flatten().fieldErrors,
+          },
         },
         { status: 400 }
       );
@@ -176,8 +166,8 @@ export async function POST(
         {
           error: {
             code: 'DUPLICATE_PHONE',
-            message: 'An engineer with this phone number already exists'
-          }
+            message: 'An engineer with this phone number already exists',
+          },
         },
         { status: 409 }
       );
@@ -188,6 +178,7 @@ export async function POST(
       .from('engineers')
       .insert({
         agency_id: agencyId || null, // Allow null agency_id
+        user_id: crypto.randomUUID(),
         name: engineerData.name,
         phone: engineerData.phone,
         email: engineerData.email,
@@ -211,9 +202,6 @@ export async function POST(
     return NextResponse.json({ engineer }, { status: 201 });
   } catch (error) {
     console.error('Error creating engineer:', error);
-    return NextResponse.json(
-      { error: { message: 'Failed to create engineer' } },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: { message: 'Failed to create engineer' } }, { status: 500 });
   }
 }

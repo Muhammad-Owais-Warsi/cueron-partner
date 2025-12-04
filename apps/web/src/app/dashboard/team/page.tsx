@@ -85,12 +85,7 @@ export default function TeamPage() {
           >
             Bulk Upload
           </button>
-          <button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Add Engineer
-          </button>
+          <AddEngineerDialog agencyId={agencyId} />
         </div>
       </div>
 
@@ -126,12 +121,7 @@ export default function TeamPage() {
       )}
 
       {/* Dialogs */}
-      <AddEngineerDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onSuccess={handleEngineerAdded}
-        agencyId={agencyId || undefined}
-      />
+
       <BulkUploadDialog
         isOpen={isBulkUploadOpen}
         onClose={() => setIsBulkUploadOpen(false)}
