@@ -79,12 +79,7 @@ export default function TeamPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => setIsBulkUploadOpen(true)}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Bulk Upload
-          </button>
+          <BulkUploadDialog agencyId={agencyId} />
           <AddEngineerDialog agencyId={agencyId} />
         </div>
       </div>
@@ -119,14 +114,6 @@ export default function TeamPage() {
       ) : (
         <TeamMapView key={refreshKey} agencyId={agencyId || undefined} />
       )}
-
-      {/* Dialogs */}
-
-      <BulkUploadDialog
-        isOpen={isBulkUploadOpen}
-        onClose={() => setIsBulkUploadOpen(false)}
-        onSuccess={handleBulkUploadComplete}
-      />
     </div>
   );
 }

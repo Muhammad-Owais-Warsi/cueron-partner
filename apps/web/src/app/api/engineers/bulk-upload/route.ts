@@ -1,15 +1,15 @@
 /**
  * Bulk Engineer Upload API Route
  * POST /api/engineers/bulk-upload
- * 
+ *
  * Handles bulk engineer creation from CSV file with validation,
  * phone uniqueness check, and error reporting.
- * 
+ *
  * Requirements: 2.5
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateEngineerInputSchema } from '@cueron/utils/src/schemas';
+import { CreateEngineerInputSchema, engineerSchema } from '@cueron/utils/src/schemas';
 import { createAdminClient } from '@/lib/supabase/server';
 import type { BulkEngineerUpload } from '@cueron/types/src/engineer';
 
@@ -47,16 +47,16 @@ function successResponse(data: any, status: number = 200) {
  * Parse CSV content into rows
  */
 function parseCSV(content: string): string[][] {
-  const lines = content.split('\n').filter(line => line.trim());
-  return lines.map(line => {
+  const lines = content.split('\n').filter((line) => line.trim());
+  return lines.map((line) => {
     // Simple CSV parsing - handles quoted fields
     const fields: string[] = [];
     let currentField = '';
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -66,7 +66,7 @@ function parseCSV(content: string): string[][] {
         currentField += char;
       }
     }
-    
+
     fields.push(currentField.trim());
     return fields;
   });
@@ -80,9 +80,9 @@ function parseCertifications(certString: string): any[] {
   if (!certString || certString.trim() === '') {
     return [];
   }
-  
-  const certs = certString.split('|').filter(c => c.trim());
-  return certs.map(cert => {
+
+  const certs = certString.split('|').filter((c) => c.trim());
+  return certs.map((cert) => {
     const [type, level, cert_number, verified] = cert.split(':');
     return {
       type: type?.trim() || 'Other',
@@ -101,7 +101,10 @@ function parseSpecializations(specString: string): string[] {
   if (!specString || specString.trim() === '') {
     return [];
   }
-  return specString.split('|').map(s => s.trim()).filter(s => s);
+  return specString
+    .split('|')
+    .map((s) => s.trim())
+    .filter((s) => s);
 }
 
 /**
@@ -157,14 +160,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract header and data rows
-    const headers = rows[0].map(h => h.toLowerCase().trim());
+    const headers = rows[0].map((h) => h.toLowerCase().trim());
+    console.log(headers);
     const dataRows = rows.slice(1);
-
+    console.log(dataRows);
     // Validate required headers
-    const requiredHeaders = ['name', 'phone', 'skill_level', 'employment_type'];
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-    
+    const requiredHeaders = ['name', 'phone', 'email', 'skill_level', 'employment_type'];
+    const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
+
     if (missingHeaders.length > 0) {
+      console.log(missingHeaders);
       return errorResponse(
         'MISSING_HEADERS',
         'CSV file is missing required headers',
@@ -182,13 +187,9 @@ export async function POST(request: NextRequest) {
     const createdEngineers: any[] = [];
 
     // Get existing phone numbers to check for duplicates
-    const { data: existingEngineers } = await supabase
-      .from('engineers')
-      .select('phone');
-    
-    const existingPhones = new Set(
-      existingEngineers?.map(e => e.phone) || []
-    );
+    const { data: existingEngineers } = await supabase.from('engineers').select('phone');
+
+    const existingPhones = new Set(existingEngineers?.map((e) => e.phone) || []);
 
     // Process each row
     for (let i = 0; i < dataRows.length; i++) {
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest) {
 
         headers.forEach((header, index) => {
           const value = row[index]?.trim();
-          
+
           switch (header) {
             case 'name':
               engineerData.name = value;
@@ -241,8 +242,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate engineer data
-        const validation = CreateEngineerInputSchema.safeParse(engineerData);
-        
+        const validation = engineerSchema.safeParse(engineerData);
+
         if (!validation.success) {
           validation.error.errors.forEach((err: any) => {
             errors.push({
@@ -270,7 +271,8 @@ export async function POST(request: NextRequest) {
         const { data: newEngineer, error: insertError } = await supabase
           .from('engineers')
           .insert({
-            agency_id: validatedData.agency_id,
+            // agency_id: validatedData.agency_id,
+            user_id: crypto.randomUUID(),
             name: validatedData.name,
             phone: validatedData.phone,
             email: validatedData.email,
@@ -301,7 +303,6 @@ export async function POST(request: NextRequest) {
         existingPhones.add(validatedData.phone);
         createdEngineers.push(newEngineer);
         successCount++;
-
       } catch (error) {
         errors.push({
           row: rowNumber,
@@ -319,14 +320,8 @@ export async function POST(request: NextRequest) {
     };
 
     return successResponse(response, 200);
-
   } catch (error) {
     console.error('Unexpected error in bulk engineer upload:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }

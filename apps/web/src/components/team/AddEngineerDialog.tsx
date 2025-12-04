@@ -84,6 +84,7 @@ const FORM_STEPS: FormStep[] = [
         name: 'email',
         label: 'Email',
         type: 'text',
+        required: true,
         placeholder: 'engineer@example.com',
       },
       {
