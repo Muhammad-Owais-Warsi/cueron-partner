@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { X, Plus } from 'lucide-react';
+import { X, UserPlus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { Spinner } from '../ui/spinner';
@@ -242,7 +242,6 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
 
       toast.success('Engineer created successfully!');
       reset();
-      onSuccess();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create engineer');
     } finally {
@@ -264,8 +263,6 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
       { type: 'ITI', level: 1, cert_number: '', verified: false, issued_date: '' },
     ]);
     setStep(1);
-
-    onClose();
   };
 
   const renderField = (field: FormField): JSX.Element | null => {
@@ -352,12 +349,7 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <Label className="font-medium">Certifications</Label>
-        <Button
-          size="sm"
-          onClick={addCertification}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-          type="button"
-        >
+        <Button size="sm" onClick={addCertification} className="" type="button">
           <Plus className="w-4 h-4 mr-1" /> Add
         </Button>
       </div>
@@ -372,11 +364,9 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
       ) : (
         certifications.map((cert, i) => (
           <div key={i} className="p-4 border rounded-md space-y-3 relative">
-            {/* Always show remove button, even for the first one */}
             <Button
-              size="icon-sm"
               variant="ghost"
-              className="absolute right-2 top-2 p-1 hover:bg-gray-100 rounded"
+              className="absolute right-2 top-2 p-1 rounded size-5"
               onClick={() => removeCertification(i)}
               title="Remove certification"
             >
@@ -464,7 +454,9 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
     return (
       <div className="space-y-6">
         <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white border-b pb-2">
+            Basic Information
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-gray-600">Full Name</Label>
@@ -488,7 +480,9 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900 border-b pb-2">Skills & Experience</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white border-b pb-2">
+            Skills & Experience
+          </h3>
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-gray-600">Skill Level</Label>
@@ -529,7 +523,9 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900 border-b pb-2">Certifications</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white border-b pb-2">
+            Certifications
+          </h3>
           {certifications.some((cert) => cert.cert_number && cert.type) ? (
             <div className="space-y-2">
               {certifications
@@ -594,7 +590,7 @@ export function AddEngineerDialog({ agencyId }: AddEngineerDialogProps) {
     <Dialog>
       <DialogTrigger>
         <Button>
-          <Plus />
+          <UserPlus />
           Add Engineer
         </Button>
       </DialogTrigger>

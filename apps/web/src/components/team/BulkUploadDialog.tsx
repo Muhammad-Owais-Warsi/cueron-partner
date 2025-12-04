@@ -118,7 +118,7 @@ export function BulkUploadDialog({ agencyId }: BulkUploadDialogProps) {
         }, 2000);
       } else {
         toast.warning(`Upload completed with ${data.error_count} errors. Check results below.`);
-        // Show detailed errors via toast
+
         if (data.errors && data.errors.length > 0) {
           const errorSummary = data.errors
             .slice(0, 3)
