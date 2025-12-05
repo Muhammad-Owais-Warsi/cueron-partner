@@ -3,6 +3,35 @@
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useUserProfile } from '@/hooks/useAuth';
+import { Spinner } from '@/components/ui/spinner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  CreditCard,
+  RefreshCw,
+  Circle,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  RotateCcw,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Payment {
   id: string;
@@ -14,23 +43,92 @@ interface Payment {
   paid_at?: string;
 }
 
+const mockPayments: Payment[] = [
+  {
+    id: 'pay_N4mB9x7K1Q',
+    amount: 15000,
+    payment_type: 'service_fee',
+    status: 'completed',
+    payment_method: 'upi',
+    created_at: '2024-01-15T10:30:00Z',
+    paid_at: '2024-01-15T10:31:00Z',
+  },
+  {
+    id: 'pay_M3nC8y6J2R',
+    amount: 8500,
+    payment_type: 'commission',
+    status: 'completed',
+    payment_method: 'card',
+    created_at: '2024-01-14T14:20:00Z',
+    paid_at: '2024-01-14T14:22:00Z',
+  },
+  {
+    id: 'pay_L2oD7z5K3S',
+    amount: 12000,
+    payment_type: 'bonus',
+    status: 'pending',
+    payment_method: 'bank_transfer',
+    created_at: '2024-01-13T09:15:00Z',
+  },
+  {
+    id: 'pay_K1pE6a4L4T',
+    amount: 25000,
+    payment_type: 'service_fee',
+    status: 'processing',
+    payment_method: 'upi',
+    created_at: '2024-01-12T16:45:00Z',
+  },
+  {
+    id: 'pay_J0qF5b3M5U',
+    amount: 5000,
+    payment_type: 'refund',
+    status: 'refunded',
+    payment_method: 'card',
+    created_at: '2024-01-11T11:30:00Z',
+    paid_at: '2024-01-11T11:35:00Z',
+  },
+  {
+    id: 'pay_I9rG4c2N6V',
+    amount: 18000,
+    payment_type: 'service_fee',
+    status: 'failed',
+    payment_method: 'bank_transfer',
+    created_at: '2024-01-10T08:20:00Z',
+  },
+  {
+    id: 'pay_H8sH3d1O7W',
+    amount: 7500,
+    payment_type: 'commission',
+    status: 'completed',
+    payment_method: 'upi',
+    created_at: '2024-01-09T13:10:00Z',
+    paid_at: '2024-01-09T13:12:00Z',
+  },
+  {
+    id: 'pay_G7tI2e0P8X',
+    amount: 22000,
+    payment_type: 'service_fee',
+    status: 'completed',
+    payment_method: 'card',
+    created_at: '2024-01-08T15:25:00Z',
+    paid_at: '2024-01-08T15:27:00Z',
+  },
+];
+
 function PaymentsContent() {
   const { profile, loading: profileLoading } = useUserProfile();
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>('all');
 
-  useEffect(() => {
-    if (profile?.agency?.id) {
-      loadPayments(profile.agency.id);
-    }
-  }, [profile, filter]);
+  const filteredPayments = payments.filter((payment) => {
+    if (filter === 'all') return true;
+    return payment.status.toLowerCase() === filter.toLowerCase();
+  });
 
   const loadPayments = async (agencyId: string) => {
     try {
       setLoading(true);
-      setError(null);
 
       const queryParams = new URLSearchParams();
       if (filter !== 'all') {
@@ -45,299 +143,205 @@ function PaymentsContent() {
 
       const data = await response.json();
       setPayments(data.payments || []);
+      toast.success('Payments refreshed successfully');
     } catch (err) {
       console.error('Error loading payments:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load payments');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load payments';
+      toast.error(errorMessage, {
+        action: {
+          label: 'Retry',
+          onClick: () => loadPayments(agencyId),
+        },
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusBadge = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
+
+    switch (normalizedStatus) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return (
+          <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            Completed
+          </Badge>
+        );
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return (
+          <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
       case 'processing':
-        return 'bg-blue-100 text-blue-800';
+        return (
+          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+            <Circle className="w-3 h-3 mr-1" />
+            Processing
+          </Badge>
+        );
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return (
+          <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+            <XCircle className="w-3 h-3 mr-1" />
+            Failed
+          </Badge>
+        );
       case 'refunded':
-        return 'bg-purple-100 text-purple-800';
+        return (
+          <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700">
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Refunded
+          </Badge>
+        );
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
   if (profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <svg
-            className="animate-spin h-12 w-12 text-blue-600 mx-auto"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
+        <Spinner />
       </div>
     );
   }
 
   return (
-    <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-        <p className="text-gray-600 mt-1">
-          View and manage all payment transactions for your agency
+    <div className="container mx-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-semibold">Payments</h1>
+        <p className="text-muted-foreground mt-1">
+          Track and manage all payment transactions for your agency
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            All Payments
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              filter === 'completed'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => setFilter('pending')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              filter === 'pending'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => setFilter('processing')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              filter === 'processing'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Processing
-          </button>
-          <button
-            onClick={() => setFilter('failed')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              filter === 'failed'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Failed
-          </button>
-        </div>
-      </div>
-
-      {/* Payments Table */}
-      {loading ? (
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="animate-pulse space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between py-4 border-b border-gray-100"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
-                  <div>
-                    <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-24"></div>
-                  </div>
-                </div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
-                <div className="h-6 bg-gray-200 rounded-full w-20"></div>
-                <div className="h-4 bg-gray-200 rounded w-24"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+      <Card>
+        <CardHeader className="pb-3 w-full">
+          <div className="flex items-start justify-between">
             <div>
-              <h4 className="font-semibold text-red-900 mb-1">Error Loading Payments</h4>
-              <p className="text-sm text-red-800">{error}</p>
-              <button
+              <CardTitle className="text-lg">Transaction History</CardTitle>
+              <CardDescription>
+                View all payment transactions and their current status
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Payments</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => profile?.agency?.id && loadPayments(profile.agency.id)}
-                className="mt-3 text-sm font-medium text-red-600 hover:text-red-700"
+                disabled={loading}
               >
-                Try Again
-              </button>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          {payments.length === 0 ? (
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Spinner />
+            </div>
+          ) : filteredPayments.length === 0 ? (
             <div className="text-center py-12">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No payments</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <CreditCard className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No payments found</h3>
+              <p className="text-muted-foreground mt-2">
                 {filter === 'all'
-                  ? 'No payments have been recorded yet.'
-                  : `No ${filter} payments found.`}
+                  ? 'No payment transactions have been recorded yet.'
+                  : `No ${filter} payments found. Try changing the filter.`}
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Payment
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Type
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {payments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <svg
-                              className="h-6 w-6 text-blue-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              Payment #{payment.id.slice(0, 8)}
+            <div className="border rounded-lg">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow className="border-b">
+                    <TableHead className="w-[300px]">Transaction</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayments.map((payment) => (
+                    <TableRow key={payment.id} className="cursor-pointer">
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="h-10 w-10 rounded-full border bg-muted flex items-center justify-center">
+                              <CreditCard className="h-4 w-4 text-muted-foreground" />
                             </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">
+                              Payment #{payment.id.slice(4).toUpperCase()}
+                            </p>
                             {payment.payment_method && (
-                              <div className="text-sm text-gray-500 capitalize">
-                                {payment.payment_method}
-                              </div>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                via {payment.payment_method.replace('_', ' ')}
+                              </p>
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 capitalize">
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm capitalize">
                           {payment.payment_type.replace('_', ' ')}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
-                            payment.status
-                          )}`}
-                        >
-                          {payment.status}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(payment.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        ₹{payment.amount.toLocaleString('en-IN')}
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(payment.created_at)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-medium">
+                        {formatAmount(payment.amount)}
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
-        </div>
-      )}
-    </>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -348,3 +352,10 @@ export default function PaymentsPage() {
     </ProtectedRoute>
   );
 }
+
+// <div className="space-y-1">
+//   <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Team Management</h1>
+//   <p className="text-muted-foreground">
+//     Manage your engineers, track availability, and monitor locations
+//   </p>
+// </div>
