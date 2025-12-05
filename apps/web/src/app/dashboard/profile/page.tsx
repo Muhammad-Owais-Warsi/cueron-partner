@@ -1,256 +1,203 @@
 'use client';
 
-/**
- * User Profile Page
- *
- * User profile management page for individual users to manage their personal information
- * and preferences.
- *
- * Requirements: 1.1, 14.1
- */
-
 import { useState } from 'react';
 import { useAuth, useUserProfile } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { User, Mail, Phone, Shield, MapPin, Calendar, Star } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { profile, loading } = useUserProfile();
-  const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile');
+  const [formData, setFormData] = useState({
+    name: user?.user_metadata?.name || '',
+    email: user?.email || '',
+    phone: user?.user_metadata?.phone || '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Updating profile:', formData);
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <Spinner />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">Please log in to view your profile.</p>
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">Please log in to view your profile.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  return (
-    <>
-      <div className="p-6">
-        <div className="mb-6">
-          {/* <h1 className="text-2xl font-bold text-gray-900">My Profile</h1> */}
-          <p className="text-gray-600 mt-1">Manage your personal information and preferences</p>
-        </div>
+  const getUserRole = () => {
+    if (profile?.type === 'engineer') {
+      return `Engineer at ${profile.agency?.name || 'Agency'}`;
+    } else if (profile?.type === 'agency_user') {
+      return `${profile.role} at ${profile.agency?.name || 'Agency'}`;
+    }
+    return 'User';
+  };
 
-        <div className="bg-white rounded-lg shadow">
-          {/* User Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center space-x-4">
-              <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <Avatar className="h-24 w-24">
+                <AvatarFallback className="text-2xl font-semibold">
+                  {getInitials(user.user_metadata?.name || user.email || 'U')}
+                </AvatarFallback>
+              </Avatar>
+
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {user.user_metadata?.name || user.email}
-                </h2>
-                <p className="text-gray-600">
-                  {profile?.type === 'engineer'
-                    ? `Engineer at ${profile.agency?.name || 'Agency'}`
-                    : profile?.type === 'agency_user'
-                      ? `${profile.role} at ${profile.agency?.name || 'Agency'}`
-                      : 'User'}
-                </p>
+                <h2 className="text-xl font-semibold">{user.user_metadata?.name || 'User'}</h2>
+                <p className="text-muted-foreground text-sm">{getUserRole()}</p>
               </div>
+
+              <Badge variant="secondary" className="mt-2">
+                {profile?.type === 'engineer' ? 'Engineer' : 'Agency User'}
+              </Badge>
             </div>
-          </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`
-                  px-6 py-4 text-sm font-medium border-b-2 transition-colors
-                  ${
-                    activeTab === 'profile'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                  }
-                `}
-              >
-                Personal Information
-              </button>
-              <button
-                onClick={() => setActiveTab('preferences')}
-                className={`
-                  px-6 py-4 text-sm font-medium border-b-2 transition-colors
-                  ${
-                    activeTab === 'preferences'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                  }
-                `}
-              >
-                Preferences
-              </button>
-            </nav>
-          </div>
+            <Separator className="my-6" />
 
-          {/* Tab Content */}
-          <div className="p-6">
-            {activeTab === 'profile' && <PersonalInfoSection user={user} />}
-            {activeTab === 'preferences' && <PreferencesSection />}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">{user.email}</span>
+              </div>
 
-interface PersonalInfoSectionProps {
-  user: any;
-}
+              {user.user_metadata?.phone && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{user.user_metadata.phone}</span>
+                </div>
+              )}
 
-function PersonalInfoSection({ user }: PersonalInfoSectionProps) {
-  const [formData, setFormData] = useState({
-    name: user.user_metadata?.name || '',
-    email: user.email || '',
-    phone: user.user_metadata?.phone || '',
-  });
+              <div className="flex items-center gap-3 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">
+                  Joined{' '}
+                  {new Date(user.created_at).toLocaleDateString('en-IN', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement profile update logic
-    console.log('Updating profile:', formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              value={formData.email}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-            />
-            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              maxLength={10}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Security</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <div className="font-medium text-gray-900">Password</div>
-              <div className="text-sm text-gray-600">Last updated 2 months ago</div>
+              {profile?.type === 'engineer' && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">4.8 Rating</span>
+                </div>
+              )}
             </div>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Change Password
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Shield className="h-5 w-5" />
+              Account Security
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <div className="font-medium text-sm">Password</div>
+                <div className="text-xs text-muted-foreground">Last updated 2 months ago</div>
+              </div>
+              <Button variant="outline" size="sm">
+                Change
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Save Changes
-        </button>
+      <div className="lg:col-span-2 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Personal Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit}>
+              <FieldGroup className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field>
+                    <FieldLabel>Full Name</FieldLabel>
+                    <Input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter your full name"
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Phone Number</FieldLabel>
+                    <Input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Enter your phone number"
+                      maxLength={10}
+                    />
+                  </Field>
+                </div>
+
+                <Field>
+                  <FieldLabel>Email Address</FieldLabel>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="email"
+                      value={user.email}
+                      readOnly
+                      className="bg-muted text-muted-foreground"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email address cannot be changed
+                  </p>
+                </Field>
+
+                <Separator />
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-    </form>
-  );
-}
-
-function PreferencesSection() {
-  const [preferences, setPreferences] = useState({
-    theme: 'light',
-    language: 'en',
-    timezone: 'Asia/Kolkata',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement preferences update logic
-    console.log('Updating preferences:', preferences);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Display Preferences</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-            <select
-              value={preferences.theme}
-              onChange={(e) => setPreferences((prev) => ({ ...prev, theme: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-            <select
-              value={preferences.language}
-              onChange={(e) => setPreferences((prev) => ({ ...prev, language: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="en">English</option>
-              <option value="hi">Hindi</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-            <select
-              value={preferences.timezone}
-              onChange={(e) => setPreferences((prev) => ({ ...prev, timezone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Asia/Kolkata">India (IST)</option>
-              <option value="Asia/Dubai">UAE (GST)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Save Preferences
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }
