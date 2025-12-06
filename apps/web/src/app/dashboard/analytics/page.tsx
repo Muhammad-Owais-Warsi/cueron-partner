@@ -348,7 +348,7 @@ function PaymentsContent() {
 export default function PaymentsPage() {
   return (
     <ProtectedRoute>
-      <PaymentsContent />
+      <Spinner />
     </ProtectedRoute>
   );
 }

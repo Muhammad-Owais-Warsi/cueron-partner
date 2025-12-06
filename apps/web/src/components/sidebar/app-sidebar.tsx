@@ -4,7 +4,6 @@ import * as React from 'react';
 import {
   ArrowUpCircleIcon,
   Home,
-  SettingsIcon,
   Briefcase,
   Users,
   BarChart3,
@@ -12,9 +11,9 @@ import {
   Settings,
 } from 'lucide-react';
 
-import { NavMain } from '@/components/nav-main';
-import { NavSecondary } from '@/components/nav-secondary';
-import { NavUser } from '@/components/nav-user';
+import { NavMain } from '@/components/sidebar/nav-main';
+
+import { NavUser } from '@/components/sidebar/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +24,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useUserProfile } from '@/hooks';
-import ThemeToggle from './theme/theme-toggle';
+import ThemeToggle from '../theme/theme-toggle';
 
 const data = {
   user: {

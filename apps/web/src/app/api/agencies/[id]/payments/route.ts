@@ -1,20 +1,17 @@
 /**
  * Agency Payments API Route
  * GET /api/agencies/{id}/payments - List payments for an agency
- * 
+ *
  * Provides payment listing with agency data isolation.
  * Supports filtering by status and date range.
- * 
+ *
  * Requirements: 11.1, 11.3
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
-import { 
-  assertPermission, 
-  assertAgencyAccess
-} from '@cueron/utils/src/authorization';
+import { assertPermission, assertAgencyAccess } from '@cueron/utils/src/authorization';
 import type { PaymentStatus } from '@cueron/types/src/payment';
 
 /**
@@ -50,57 +47,39 @@ function successResponse(data: any, status: number = 200) {
 /**
  * GET /api/agencies/{id}/payments
  * List payments for an agency with filtering
- * 
+ *
  * Query Parameters:
  * - status: Comma-separated payment statuses (e.g., "pending,processing")
  * - date_from: ISO date string for start of date range
  * - date_to: ISO date string for end of date range
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
- * 
+ *
  * Property 48: Payment list isolation
  * Validates: Requirements 11.1
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: agencyId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(agencyId)) {
-      return errorResponse(
-        'INVALID_ID',
-        'Invalid agency ID format',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_ID', 'Invalid agency ID format', undefined, 400);
     }
 
     // Get authenticated user session
     const session = await getUserSession();
-    
+
     if (!session) {
-      return errorResponse(
-        'UNAUTHORIZED',
-        'Authentication required',
-        undefined,
-        401
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
     // Check if user has permission to read agency data
     try {
       assertPermission(session.role, 'agency:read');
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Check data isolation - user can only access their own agency
@@ -108,206 +87,155 @@ export async function GET(
     try {
       assertAgencyAccess(session.agency_id, agencyId);
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
-    // Parse query parameters
-    const { searchParams } = new URL(request.url);
-    
+    // // Parse query parameters
+    // const { searchParams } = new URL(request.url);
+
     // Status filter
-    const statusParam = searchParams.get('status');
-    const statusFilter: PaymentStatus[] | null = statusParam
-      ? statusParam.split(',').map(s => s.trim() as PaymentStatus)
-      : null;
+    // const statusParam = searchParams.get('status');
+    // const statusFilter: PaymentStatus[] | null = statusParam
+    //   ? statusParam.split(',').map(s => s.trim() as PaymentStatus)
+    //   : null;
 
     // Date range filter
-    const dateFrom = searchParams.get('date_from');
-    const dateTo = searchParams.get('date_to');
+    // const dateFrom = searchParams.get('date_from');
+    // const dateTo = searchParams.get('date_to');
 
     // Pagination
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
-    const offset = (page - 1) * limit;
+    // const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    // const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+    // const offset = (page - 1) * limit;
 
     // Validate status filter
-    const validStatuses: PaymentStatus[] = [
-      'pending', 'processing', 'completed', 'failed', 'refunded'
-    ];
+    // const validStatuses: PaymentStatus[] = [
+    //   'pending', 'processing', 'completed', 'failed', 'refunded'
+    // ];
 
-    if (statusFilter) {
-      const invalidStatuses = statusFilter.filter(s => !validStatuses.includes(s));
-      if (invalidStatuses.length > 0) {
-        return errorResponse(
-          'INVALID_FILTER',
-          `Invalid status values: ${invalidStatuses.join(', ')}`,
-          { status: [`Valid values are: ${validStatuses.join(', ')}`] },
-          400
-        );
-      }
-    }
+    // if (statusFilter) {
+    //   const invalidStatuses = statusFilter.filter(s => !validStatuses.includes(s));
+    //   if (invalidStatuses.length > 0) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       `Invalid status values: ${invalidStatuses.join(', ')}`,
+    //       { status: [`Valid values are: ${validStatuses.join(', ')}`] },
+    //       400
+    //     );
+    //   }
+    // }
 
     // Validate date range
-    if (dateFrom && isNaN(Date.parse(dateFrom))) {
-      return errorResponse(
-        'INVALID_FILTER',
-        'Invalid date_from format. Use ISO 8601 format',
-        { date_from: ['Must be a valid ISO 8601 date string'] },
-        400
-      );
-    }
+    // if (dateFrom && isNaN(Date.parse(dateFrom))) {
+    //   return errorResponse(
+    //     'INVALID_FILTER',
+    //     'Invalid date_from format. Use ISO 8601 format',
+    //     { date_from: ['Must be a valid ISO 8601 date string'] },
+    //     400
+    //   );
+    // }
 
-    if (dateTo && isNaN(Date.parse(dateTo))) {
-      return errorResponse(
-        'INVALID_FILTER',
-        'Invalid date_to format. Use ISO 8601 format',
-        { date_to: ['Must be a valid ISO 8601 date string'] },
-        400
-      );
-    }
+    // if (dateTo && isNaN(Date.parse(dateTo))) {
+    //   return errorResponse(
+    //     'INVALID_FILTER',
+    //     'Invalid date_to format. Use ISO 8601 format',
+    //     { date_to: ['Must be a valid ISO 8601 date string'] },
+    //     400
+    //   );
+    // }
 
     // Create Supabase client
     const supabase = await createClient();
 
     // Build query with filters
     // Property 48: Payment list isolation - only return payments for this agency
-    let query = supabase
+    const query = supabase
       .from('payments')
       .select('*', { count: 'exact' })
       .eq('agency_id', agencyId);
 
-    // Apply status filter
-    if (statusFilter && statusFilter.length > 0) {
-      query = query.in('status', statusFilter);
-    }
+    // // Apply status filter
+    // if (statusFilter && statusFilter.length > 0) {
+    //   query = query.in('status', statusFilter);
+    // }
 
     // Apply date range filter on created_at
-    if (dateFrom) {
-      query = query.gte('created_at', dateFrom);
-    }
-    if (dateTo) {
-      query = query.lte('created_at', dateTo);
-    }
+    // if (dateFrom) {
+    //   query = query.gte('created_at', dateFrom);
+    // }
+    // if (dateTo) {
+    //   query = query.lte('created_at', dateTo);
+    // }
 
     // Apply sorting (most recent first)
-    query = query.order('created_at', { ascending: false });
+    // query = query.order('created_at', { ascending: false });
 
     // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    // query = query.range(offset, offset + limit - 1);
 
     // Execute query
     const { data: payments, error: fetchError, count } = await query;
 
     if (fetchError) {
       console.error('Error fetching payments:', fetchError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to fetch payments',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to fetch payments', undefined, 500);
     }
 
     // Build response
     const response = {
       payments: payments || [],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / limit),
-        has_next: page < Math.ceil((count || 0) / limit),
-        has_prev: page > 1,
-      },
-      filters_applied: {
-        status: statusFilter,
-        date_from: dateFrom,
-        date_to: dateTo,
-      },
     };
 
     return successResponse(response);
   } catch (error) {
     console.error('Unexpected error in GET /api/agencies/[id]/payments:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }
 
 /**
  * PATCH /api/agencies/{id}/payments
  * Update payment status and record timestamps
- * 
+ *
  * Request Body:
  * - payment_id: UUID of the payment to update
  * - status: New payment status
  * - payment_gateway_id: Optional gateway transaction ID
  * - invoice_number: Optional invoice number
  * - invoice_url: Optional invoice URL
- * 
+ *
  * Property 50: Payment processing update
  * Validates: Requirements 11.3
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: agencyId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(agencyId)) {
-      return errorResponse(
-        'INVALID_ID',
-        'Invalid agency ID format',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_ID', 'Invalid agency ID format', undefined, 400);
     }
 
     // Get authenticated user session
     const session = await getUserSession();
-    
+
     if (!session) {
-      return errorResponse(
-        'UNAUTHORIZED',
-        'Authentication required',
-        undefined,
-        401
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
     // Check if user has permission to update payments
     try {
       assertPermission(session.role, 'payment:write');
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Check data isolation
     try {
       assertAgencyAccess(session.agency_id, agencyId);
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Parse request body
@@ -315,14 +243,9 @@ export async function PATCH(
     try {
       body = await request.json();
     } catch (error) {
-      return errorResponse(
-        'INVALID_REQUEST',
-        'Invalid JSON in request body',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_REQUEST', 'Invalid JSON in request body', undefined, 400);
     }
-    
+
     const { payment_id, status, payment_gateway_id, invoice_number, invoice_url } = body;
 
     // Validate required fields
@@ -346,7 +269,11 @@ export async function PATCH(
 
     // Validate status if provided
     const validStatuses: PaymentStatus[] = [
-      'pending', 'processing', 'completed', 'failed', 'refunded'
+      'pending',
+      'processing',
+      'completed',
+      'failed',
+      'refunded',
     ];
 
     if (status && !validStatuses.includes(status)) {
@@ -387,7 +314,7 @@ export async function PATCH(
     // When status changes to 'completed', record paid_at timestamp
     if (status) {
       updateData.status = status;
-      
+
       if (status === 'completed' && !existingPayment.paid_at) {
         updateData.paid_at = new Date().toISOString();
       }
@@ -416,12 +343,7 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating payment:', updateError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to update payment',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to update payment', undefined, 500);
     }
 
     return successResponse({
@@ -430,81 +352,52 @@ export async function PATCH(
     });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/agencies/[id]/payments:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }
-
 
 /**
  * POST /api/agencies/{id}/payments
  * Create a Razorpay payment order
- * 
+ *
  * Request Body:
  * - payment_id: UUID of the payment record
  * - amount: Payment amount in INR (optional, will use payment record amount if not provided)
- * 
+ *
  * This endpoint integrates with Razorpay to create a payment order
  * and returns the order details for client-side checkout.
- * 
+ *
  * Requirements: 11.3
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: agencyId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(agencyId)) {
-      return errorResponse(
-        'INVALID_ID',
-        'Invalid agency ID format',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_ID', 'Invalid agency ID format', undefined, 400);
     }
 
     // Get authenticated user session
     const session = await getUserSession();
-    
+
     if (!session) {
-      return errorResponse(
-        'UNAUTHORIZED',
-        'Authentication required',
-        undefined,
-        401
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
     // Check if user has permission to create payments
     try {
       assertPermission(session.role, 'payment:write');
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Check data isolation
     try {
       assertAgencyAccess(session.agency_id, agencyId);
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Parse request body
@@ -512,14 +405,9 @@ export async function POST(
     try {
       body = await request.json();
     } catch (error) {
-      return errorResponse(
-        'INVALID_REQUEST',
-        'Invalid JSON in request body',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_REQUEST', 'Invalid JSON in request body', undefined, 400);
     }
-    
+
     const { payment_id, amount: requestAmount } = body;
 
     // Validate required fields
@@ -563,12 +451,7 @@ export async function POST(
 
     // Check if payment is already processed
     if (existingPayment.status === 'completed') {
-      return errorResponse(
-        'INVALID_STATE',
-        'Payment is already completed',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_STATE', 'Payment is already completed', undefined, 400);
     }
 
     // Use amount from request or payment record
@@ -592,12 +475,7 @@ export async function POST(
       razorpayConfig = getRazorpayConfig();
     } catch (error: any) {
       console.error('Razorpay configuration error:', error);
-      return errorResponse(
-        'CONFIGURATION_ERROR',
-        'Payment gateway not configured',
-        undefined,
-        500
-      );
+      return errorResponse('CONFIGURATION_ERROR', 'Payment gateway not configured', undefined, 500);
     }
 
     // Create Razorpay order
@@ -618,12 +496,7 @@ export async function POST(
       );
     } catch (error: any) {
       console.error('Error creating Razorpay order:', error);
-      return errorResponse(
-        'GATEWAY_ERROR',
-        'Failed to create payment order',
-        undefined,
-        500
-      );
+      return errorResponse('GATEWAY_ERROR', 'Failed to create payment order', undefined, 500);
     }
 
     // Update payment with gateway order ID and set status to processing
@@ -642,30 +515,23 @@ export async function POST(
 
     if (updateError) {
       console.error('Error updating payment:', updateError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to update payment',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to update payment', undefined, 500);
     }
 
     // Return order details for client-side Razorpay checkout
-    return successResponse({
-      order_id: razorpayOrder.id,
-      amount: amount,
-      currency: 'INR',
-      key_id: razorpayConfig.keyId,
-      payment: updatedPayment,
-      message: 'Payment order created successfully',
-    }, 201);
+    return successResponse(
+      {
+        order_id: razorpayOrder.id,
+        amount: amount,
+        currency: 'INR',
+        key_id: razorpayConfig.keyId,
+        payment: updatedPayment,
+        message: 'Payment order created successfully',
+      },
+      201
+    );
   } catch (error) {
     console.error('Unexpected error in POST /api/agencies/[id]/payments:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }

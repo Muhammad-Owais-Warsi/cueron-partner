@@ -1,17 +1,17 @@
-import { AppSidebar } from '@/components/app-sidebar';
-import { SiteHeader } from '@/components/site-header';
+import { AppSidebar } from '@/components/sidebar/app-sidebar';
+import { SiteHeader } from '@/components/sidebar/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { Providers } from '../providers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// import { Providers } from '../providers';
+// import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// const queryClient = new QueryClient({
+//   defaultOptions: {
+//     queries: {
+//       staleTime: 5 * 60 * 1000, // 5 minutes
+//       refetchOnWindowFocus: false,
+//     },
+//   },
+// });
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
