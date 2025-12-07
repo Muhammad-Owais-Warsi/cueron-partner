@@ -1,21 +1,18 @@
 /**
  * Agency Jobs Listing and Filtering API Route
  * GET /api/agencies/{id}/jobs - List and filter jobs for an agency
- * 
+ *
  * Provides comprehensive job listing with filtering by status, date range,
  * location (PostGIS spatial queries), and multi-filter combination with AND logic.
  * Jobs are sorted by urgency and scheduled time.
- * 
+ *
  * Requirements: 3.1, 3.2, 3.3, 18.1, 18.2, 18.3, 18.4, 18.5
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
-import { 
-  assertPermission, 
-  assertAgencyAccess
-} from '@cueron/utils/src/authorization';
+import { assertPermission, assertAgencyAccess } from '@cueron/utils/src/authorization';
 import { isDemoUser } from '@/lib/demo-data/middleware';
 import { generateJobs } from '@/lib/demo-data/generator';
 import type { JobStatus, JobUrgency } from '@cueron/types/src/job';
@@ -63,7 +60,7 @@ const URGENCY_PRIORITY: Record<JobUrgency, number> = {
 /**
  * GET /api/agencies/{id}/jobs
  * List and filter jobs for an agency
- * 
+ *
  * Query Parameters:
  * - status: Comma-separated job statuses (e.g., "pending,assigned")
  * - urgency: Comma-separated urgency levels (e.g., "emergency,urgent")
@@ -75,73 +72,50 @@ const URGENCY_PRIORITY: Record<JobUrgency, number> = {
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: agencyId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(agencyId)) {
-      return errorResponse(
-        'INVALID_ID',
-        'Invalid agency ID format',
-        undefined,
-        400
-      );
+      return errorResponse('INVALID_ID', 'Invalid agency ID format', undefined, 400);
     }
 
     // Get authenticated user session
     const session = await getUserSession();
-    
+
     if (!session) {
-      return errorResponse(
-        'UNAUTHORIZED',
-        'Authentication required',
-        undefined,
-        401
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
     }
 
     // Check if user has permission to read agency data
     try {
       assertPermission(session.role, 'agency:read');
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Check data isolation - user can only access their own agency
     try {
       assertAgencyAccess(session.agency_id, agencyId);
     } catch (error: any) {
-      return errorResponse(
-        'FORBIDDEN',
-        error.message,
-        undefined,
-        403
-      );
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
-    
+
     // Status filter
     const statusParam = searchParams.get('status');
     const statusFilter: JobStatus[] | null = statusParam
-      ? statusParam.split(',').map(s => s.trim() as JobStatus)
+      ? statusParam.split(',').map((s) => s.trim() as JobStatus)
       : null;
 
     // Urgency filter
     const urgencyParam = searchParams.get('urgency');
     const urgencyFilter: JobUrgency[] | null = urgencyParam
-      ? urgencyParam.split(',').map(u => u.trim() as JobUrgency)
+      ? urgencyParam.split(',').map((u) => u.trim() as JobUrgency)
       : null;
 
     // Date range filter
@@ -163,35 +137,35 @@ export async function GET(
       try {
         // Generate demo jobs (generate more than needed for filtering)
         const allDemoJobs = generateJobs(session.user_id, 100);
-        
+
         // Apply filters to demo data
         let filteredJobs = allDemoJobs;
 
         // Apply status filter
         if (statusFilter && statusFilter.length > 0) {
-          filteredJobs = filteredJobs.filter(job => 
-            job.status && statusFilter.includes(job.status)
+          filteredJobs = filteredJobs.filter(
+            (job) => job.status && statusFilter.includes(job.status)
           );
         }
 
         // Apply urgency filter
         if (urgencyFilter && urgencyFilter.length > 0) {
-          filteredJobs = filteredJobs.filter(job => 
-            job.urgency && urgencyFilter.includes(job.urgency)
+          filteredJobs = filteredJobs.filter(
+            (job) => job.urgency && urgencyFilter.includes(job.urgency)
           );
         }
 
         // Apply date range filter
         if (dateFrom) {
           const fromDate = new Date(dateFrom);
-          filteredJobs = filteredJobs.filter(job => 
-            job.created_at && new Date(job.created_at) >= fromDate
+          filteredJobs = filteredJobs.filter(
+            (job) => job.created_at && new Date(job.created_at) >= fromDate
           );
         }
         if (dateTo) {
           const toDate = new Date(dateTo);
-          filteredJobs = filteredJobs.filter(job => 
-            job.created_at && new Date(job.created_at) <= toDate
+          filteredJobs = filteredJobs.filter(
+            (job) => job.created_at && new Date(job.created_at) <= toDate
           );
         }
 
@@ -202,7 +176,7 @@ export async function GET(
           const lng = parseFloat(locationLng);
           const radiusKm = parseFloat(locationRadiusKm);
 
-          filteredJobs = filteredJobs.filter(job => {
+          filteredJobs = filteredJobs.filter((job) => {
             if (!job.site_location?.lat || !job.site_location?.lng) {
               return false;
             }
@@ -218,14 +192,21 @@ export async function GET(
 
         // Sort by urgency and scheduled time
         filteredJobs.sort((a: any, b: any) => {
-          const urgencyDiff = URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
+          const urgencyDiff =
+            URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
           if (urgencyDiff !== 0) {
             return urgencyDiff;
           }
-          const aTime = a.scheduled_time ? new Date(a.scheduled_time).getTime() : 
-                        a.created_at ? new Date(a.created_at).getTime() : Infinity;
-          const bTime = b.scheduled_time ? new Date(b.scheduled_time).getTime() : 
-                        b.created_at ? new Date(b.created_at).getTime() : Infinity;
+          const aTime = a.scheduled_time
+            ? new Date(a.scheduled_time).getTime()
+            : a.created_at
+              ? new Date(a.created_at).getTime()
+              : Infinity;
+          const bTime = b.scheduled_time
+            ? new Date(b.scheduled_time).getTime()
+            : b.created_at
+              ? new Date(b.created_at).getTime()
+              : Infinity;
           return aTime - bTime;
         });
 
@@ -249,11 +230,13 @@ export async function GET(
             urgency: urgencyFilter,
             date_from: dateFrom,
             date_to: dateTo,
-            location: hasLocationFilter ? {
-              lat: parseFloat(locationLat!),
-              lng: parseFloat(locationLng!),
-              radius_km: parseFloat(locationRadiusKm!),
-            } : null,
+            location: hasLocationFilter
+              ? {
+                  lat: parseFloat(locationLat!),
+                  lng: parseFloat(locationLng!),
+                  radius_km: parseFloat(locationRadiusKm!),
+                }
+              : null,
           },
         };
 
@@ -266,12 +249,18 @@ export async function GET(
 
     // Validate filters
     const validStatuses: JobStatus[] = [
-      'pending', 'assigned', 'accepted', 'travelling', 'onsite', 'completed', 'cancelled'
+      'pending',
+      'assigned',
+      'accepted',
+      'travelling',
+      'onsite',
+      'completed',
+      'cancelled',
     ];
     const validUrgencies: JobUrgency[] = ['emergency', 'urgent', 'normal', 'scheduled'];
 
     if (statusFilter) {
-      const invalidStatuses = statusFilter.filter(s => !validStatuses.includes(s));
+      const invalidStatuses = statusFilter.filter((s) => !validStatuses.includes(s));
       if (invalidStatuses.length > 0) {
         return errorResponse(
           'INVALID_FILTER',
@@ -283,7 +272,7 @@ export async function GET(
     }
 
     if (urgencyFilter) {
-      const invalidUrgencies = urgencyFilter.filter(u => !validUrgencies.includes(u));
+      const invalidUrgencies = urgencyFilter.filter((u) => !validUrgencies.includes(u));
       if (invalidUrgencies.length > 0) {
         return errorResponse(
           'INVALID_FILTER',
@@ -377,15 +366,11 @@ export async function GET(
 
     // Execute query to get jobs
     const { data: jobs, error: fetchError } = await query;
+    console.log(jobs);
 
     if (fetchError) {
       console.error('Error fetching jobs:', fetchError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to fetch jobs',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to fetch jobs', undefined, 500);
     }
 
     let filteredJobs = jobs || [];
@@ -404,7 +389,7 @@ export async function GET(
           p_lat: lat,
           p_lng: lng,
           p_radius_meters: radiusMeters,
-          p_job_ids: filteredJobs.map(j => j.id)
+          p_job_ids: filteredJobs.map((j) => j.id),
         }
       );
 
@@ -412,7 +397,7 @@ export async function GET(
         console.error('Error applying spatial filter:', spatialError);
         // If RPC doesn't exist, fall back to client-side filtering
         // This is a simplified Haversine distance calculation
-        filteredJobs = filteredJobs.filter(job => {
+        filteredJobs = filteredJobs.filter((job) => {
           if (!job.site_location?.lat || !job.site_location?.lng) {
             return false;
           }
@@ -427,7 +412,7 @@ export async function GET(
       } else {
         // Use spatially filtered results
         const spatialJobIds = new Set(spatialJobs.map((j: any) => j.id));
-        filteredJobs = filteredJobs.filter(j => spatialJobIds.has(j.id));
+        filteredJobs = filteredJobs.filter((j) => spatialJobIds.has(j.id));
       }
     }
 
@@ -435,7 +420,8 @@ export async function GET(
     // Requirements 3.3: Jobs sorted by urgency and scheduled time
     filteredJobs.sort((a: any, b: any) => {
       // First, sort by urgency priority
-      const urgencyDiff = URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
+      const urgencyDiff =
+        URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
       if (urgencyDiff !== 0) {
         return urgencyDiff;
       }
@@ -466,23 +452,20 @@ export async function GET(
         urgency: urgencyFilter,
         date_from: dateFrom,
         date_to: dateTo,
-        location: hasLocationFilter ? {
-          lat: parseFloat(locationLat!),
-          lng: parseFloat(locationLng!),
-          radius_km: parseFloat(locationRadiusKm!),
-        } : null,
+        location: hasLocationFilter
+          ? {
+              lat: parseFloat(locationLat!),
+              lng: parseFloat(locationLng!),
+              radius_km: parseFloat(locationRadiusKm!),
+            }
+          : null,
       },
     };
 
     return successResponse(response);
   } catch (error) {
     console.error('Unexpected error in GET /api/agencies/[id]/jobs:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }
 
@@ -490,26 +473,18 @@ export async function GET(
  * Calculate distance between two coordinates using Haversine formula
  * Returns distance in kilometers
  */
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in kilometers
   const dLat = toRadians(lat2 - lat1);
   const dLon = toRadians(lon2 - lon1);
-  
+
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
-  
+
   return distance;
 }
 
