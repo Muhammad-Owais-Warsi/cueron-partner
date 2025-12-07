@@ -80,7 +80,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     let query = supabase
       .from('engineers')
       .select('*', { count: 'exact' })
-      .eq('agency_id', params.id)
+      // .eq('agency_id', params.id)
       .order('created_at', { ascending: false });
 
     // Apply status filter if provided
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Validate input
     const validation = engineerSchema.safeParse(validationData);
-
+    console.log(validation.error);
     if (!validation.success) {
       return NextResponse.json(
         {
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
       .select()
       .single();
-
+    console.log(error);
     if (error) throw error;
 
     return NextResponse.json({ engineer }, { status: 201 });

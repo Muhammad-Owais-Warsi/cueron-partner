@@ -42,88 +42,60 @@ import {
   DollarSign,
   Star,
   UserCheck,
+  ChevronDownIcon,
 } from 'lucide-react';
+import { Engineer, Job } from '@cueron/types';
+import { useUserProfile } from '@/hooks';
+import { toast } from 'sonner';
+import { useRealtimeJobs } from '@/hooks';
+import { useEffect } from 'react';
+import { getJobStatusBadge } from '../shared/jobStatusBadge';
+import { getJobUrgencyBadge } from '../shared/jobUrgencyBadge';
+import { getJobTypeBadge } from '../shared/jobTypeBadge';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu';
+import { Spinner } from '../ui/spinner';
 
-type UUID = string;
-type Timestamp = string;
-type JobType = 'Repair' | 'Installation' | 'Maintenance' | 'Inspection';
-type JobUrgency = 'urgent' | 'scheduled';
-type JobStatus = 'pending' | 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
-type PaymentStatus = 'pending' | 'paid' | 'failed';
-type SkillLevel = 1 | 2 | 3 | 4 | 5;
-
-interface EquipmentDetails {
-  brand?: string;
-  model?: string;
-  serial_number?: string;
-  capacity?: string;
+interface JobsResponse {
+  jobs: Job[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
-interface Address {
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-  lat?: number;
-  lng?: number;
-}
+export const JOB_URGENCY_OPTIONS = [
+  { title: 'Emergency', value: 'emergency' },
+  { title: 'Urgent', value: 'urgent' },
+  { title: 'Normal', value: 'normal' },
+  { title: 'Scheduled', value: 'scheduled' },
+];
 
-interface ChecklistItem {
-  item: string;
-  completed: boolean;
-}
+export const JOB_STATUS_OPTIONS = [
+  { title: 'Pending', value: 'pending' },
+  { title: 'Assigned', value: 'assigned' },
+  { title: 'Accepted', value: 'accepted' },
+  { title: 'Travelling', value: 'travelling' },
+  { title: 'Onsite', value: 'onsite' },
+  { title: 'Completed', value: 'completed' },
+  { title: 'Cancelled', value: 'cancelled' },
+];
 
-interface PartUsed {
-  part_name: string;
-  quantity: number;
-  cost?: number;
-}
-
-interface Job {
-  id: UUID;
-  job_number: string;
-  client_id?: UUID;
-  client_name: string;
-  client_phone: string;
-  job_type: JobType;
-  equipment_type: string;
-  equipment_details?: EquipmentDetails;
-  issue_description?: string;
-  site_location: Address;
-  assigned_agency_id?: UUID;
-  assigned_engineer_id?: UUID;
-  required_skill_level: SkillLevel;
-  scheduled_time?: Timestamp;
-  urgency: JobUrgency;
-  response_deadline?: Timestamp;
-  status: JobStatus;
-  assigned_at?: Timestamp;
-  accepted_at?: Timestamp;
-  started_at?: Timestamp;
-  completed_at?: Timestamp;
-  service_fee?: number;
-  payment_status: PaymentStatus;
-  service_checklist?: ChecklistItem[];
-  parts_used?: PartUsed[];
-  photos_before?: string[];
-  photos_after?: string[];
-  engineer_notes?: string;
-  client_signature_url?: string;
-  client_rating?: 1 | 2 | 3 | 4 | 5;
-  client_feedback?: string;
-  created_at: Timestamp;
-  updated_at: Timestamp;
-}
-
-interface Engineer {
-  id: string;
-  name: string;
-  skill_level: number;
-  available: boolean;
-}
+export const JOB_TYPE_OPTIONS = [
+  { title: 'AMC', value: 'AMC' },
+  { title: 'Repair', value: 'Repair' },
+  { title: 'Installation', value: 'Installation' },
+  { title: 'Emergency', value: 'Emergency' },
+] as const;
 
 // Mock engineers data
-const mockEngineers: Engineer[] = [
+// for now any (afterwards get these info to display)
+const mockEngineers: any[] = [
   { id: 'eng-001', name: 'John Smith', skill_level: 5, available: true },
   { id: 'eng-002', name: 'Sarah Johnson', skill_level: 4, available: true },
   { id: 'eng-003', name: 'Mike Davis', skill_level: 3, available: false },
@@ -223,28 +195,79 @@ const mockJobs: Job[] = [
   },
 ];
 
+export function DropdownCheckboxFilter({ label, options, selected, setSelected }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          {label}
+          <ChevronDownIcon className="w-4 h-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent>
+        <DropdownMenuLabel>Select {label}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {options.map((opt) => (
+          <DropdownMenuCheckboxItem
+            key={opt.value}
+            checked={selected.includes(opt.value)}
+            onCheckedChange={(checked) =>
+              setSelected((prev) =>
+                checked ? [...prev, opt.value] : prev.filter((v) => v !== opt.value)
+              )
+            }
+          >
+            {opt.title}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function JobsTable() {
+  const { user, profile, loading } = useUserProfile();
+  const {
+    jobs,
+    loading: jobsLoading,
+    error: jobsError,
+    refresh,
+  } = useRealtimeJobs(profile?.agency?.id);
+
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [status, setStatus] = useState<string>('all');
-  const [urgency, setUrgency] = useState<string>('all');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
+    JOB_STATUS_OPTIONS.map((opt) => opt.value)
+  );
+  const [selectedUrgencies, setSelectedUrgencies] = useState<string[]>(
+    JOB_URGENCY_OPTIONS.map((opt) => opt.value)
+  );
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    JOB_TYPE_OPTIONS.map((opt) => opt.value)
+  );
+
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [jobAssignments, setJobAssignments] = useState<Record<string, string>>({});
+  const [engineers, setEngineers] = useState<Engineer[]>([]);
 
   const filteredData = useMemo(() => {
     return mockJobs.filter((job) => {
-      const matchStatus = status === 'all' || job.status === status;
-      const matchUrgency = urgency === 'all' || job.urgency === urgency;
-      return matchStatus && matchUrgency;
+      const matchType = selectedTypes.length === 0 || selectedTypes.includes(job.job_type);
+      const matchStatus = selectedStatuses.length === 0 || selectedStatuses.includes(job.status);
+      const matchUrgency =
+        selectedUrgencies.length === 0 || selectedUrgencies.includes(job.urgency);
+      return matchStatus && matchUrgency && matchType;
     });
-  }, [status, urgency]);
+  }, [jobs, selectedStatuses, selectedUrgencies, selectedTypes]);
 
   const handleAssignEngineer = useCallback((jobId: string, engineerId: string) => {
     setJobAssignments((prev) => ({
       ...prev,
       [jobId]: engineerId,
     }));
-    // Here you would typically make an API call to assign the engineer
+
     console.log(`Assigning engineer ${engineerId} to job ${jobId}`);
   }, []);
 
@@ -269,41 +292,29 @@ export function JobsTable() {
       {
         accessorKey: 'job_type',
         header: 'Type',
-        cell: (info) => info.getValue(),
+        cell: ({ row }) => getJobTypeBadge(row.original.job_type),
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <Badge variant="secondary" className="capitalize">
-            {row.original.status.replace('_', ' ')}
-          </Badge>
-        ),
+        cell: ({ row }) => getJobStatusBadge(row.original.status),
       },
       {
         accessorKey: 'urgency',
         header: 'Urgency',
-        cell: ({ row }) => {
-          const isUrgent = row.original.urgency === 'urgent';
-          return (
-            <Badge variant={isUrgent ? 'destructive' : 'default'} className="gap-1 capitalize">
-              {isUrgent ? <AlertCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-              {row.original.urgency}
-            </Badge>
-          );
-        },
+        cell: ({ row }) => getJobUrgencyBadge(row.original.urgency),
       },
       {
         accessorKey: 'assigned_engineer_id',
         header: 'Assigned To',
         cell: ({ row }) => {
           const job = row.original;
-          const currentEngineerId = jobAssignments[job.id] || job.assigned_engineer_id;
-          const engineerName = getEngineerName(currentEngineerId);
+          // const currentEngineerId = jobAssignments[job.id] || job.assigned_engineer_id;
+          // const engineerName = getEngineerName(currentEngineerId);
 
           return (
             <Select
-              value={currentEngineerId || 'unassigned'}
+              value={'unassigned'}
               onValueChange={(value) => {
                 if (value !== 'unassigned') {
                   handleAssignEngineer(job.id, value);
@@ -311,38 +322,49 @@ export function JobsTable() {
               }}
             >
               <SelectTrigger className="w-[160px]" onClick={(e) => e.stopPropagation()}>
-                <SelectValue>
-                  {engineerName ? (
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="h-3 w-3" />
-                      {engineerName}
-                    </div>
-                  ) : (
-                    'Select Engineer'
-                  )}
-                </SelectValue>
+                <SelectValue>Select Engineer</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">
-                  <span className="text-gray-500">Unassigned</span>
-                </SelectItem>
-                {mockEngineers.map((engineer) => (
-                  <SelectItem key={engineer.id} value={engineer.id} disabled={!engineer.available}>
-                    <div className="flex items-center justify-between w-full gap-2">
-                      <span>{engineer.name}</span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          Level {engineer.skill_level}
-                        </Badge>
-                        {!engineer.available && (
-                          <Badge variant="secondary" className="text-xs">
-                            Busy
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
+  
+                {engineers.length === 0 ? (
+                  <>
+                    <SelectItem value="unassigned">
+                      <span className="text-gray-500">Unassigned</span>
+                    </SelectItem>
+
+                    <SelectItem value="no-engineers" disabled>
+                      <span className="text-gray-400 italic">No engineers available</span>
+                    </SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="unassigned">
+                      <span className="text-gray-500">Unassigned</span>
+                    </SelectItem>
+
+                    {engineers.map((engineer) => (
+                      <SelectItem
+                        key={engineer.id}
+                        value={engineer.id}
+                        disabled={engineer.availability_status !== 'available'}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span>{engineer.name}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              Level {engineer.skill_level}
+                            </Badge>
+                            {engineer.availability_status !== 'available' && (
+                              <Badge variant="secondary" className="text-xs">
+                                Busy
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           );
@@ -357,7 +379,7 @@ export function JobsTable() {
             : '-',
       },
     ],
-    [jobAssignments, handleAssignEngineer, getEngineerName]
+    [jobAssignments, handleAssignEngineer, getEngineerName, engineers]
   );
 
   const table = useReactTable({
@@ -369,13 +391,55 @@ export function JobsTable() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const handleStatusChange = useCallback((value: string) => {
-    setStatus(value);
-  }, []);
+  const loadJobs = async () => {
+    if (!profile?.agency?.id) return;
 
-  const handleUrgencyChange = useCallback((value: string) => {
-    setUrgency(value);
-  }, []);
+    try {
+      const response = await fetch(`/api/agencies/${profile.agency.id}/jobs`);
+
+      if (!response.ok) {
+        toast.error('Failed to load jobs');
+        throw new Error('Failed to load jobs');
+      }
+
+      const data: JobsResponse = await response.json();
+    } catch (err) {
+      console.error('Error loading jobs:', err);
+      toast.error('Failed to load jobs');
+      return;
+    }
+  };
+
+  const loadEngineers = async () => {
+    try {
+      const response = await fetch(`/api/agencies/${profile?.agency?.id}/engineers`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load engineers');
+      }
+      const data = await response.json();
+      
+      setEngineers(data.engineers);
+ 
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred while loading engineers';
+      toast.error(errorMessage);
+    }
+  };
+
+  
+  // place this correctly 
+  useEffect(() => {
+    if (user) {
+      void loadEngineers();
+    }
+  }, [user]);
+  useEffect(() => {
+    if (profile?.agency?.id) {
+      void loadJobs();
+    }
+  }, [profile, loadJobs]);
 
   const handleRowClick = useCallback((job: Job, e: React.MouseEvent) => {
     // Don't open sheet if clicking on the select dropdown
@@ -386,34 +450,38 @@ export function JobsTable() {
     setIsSheetOpen(true);
   }, []);
 
+  if (loading && jobsLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="flex items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <div className="mb-4 flex gap-4">
-        <Select value={status} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="assigned">Assigned</SelectItem>
-            <SelectItem value="accepted">Accepted</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownCheckboxFilter
+          options={JOB_STATUS_OPTIONS}
+          selected={selectedStatuses}
+          setSelected={setSelectedStatuses}
+          label="Status"
+        />
+        <DropdownCheckboxFilter
+          options={JOB_URGENCY_OPTIONS}
+          selected={selectedUrgencies}
+          setSelected={setSelectedUrgencies}
+          label="Urgency"
+        />
 
-        <Select value={urgency} onValueChange={handleUrgencyChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Urgency" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Urgency</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownCheckboxFilter
+          options={JOB_TYPE_OPTIONS}
+          selected={selectedTypes}
+          setSelected={setSelectedTypes}
+          label="Job Type"
+        />
       </div>
 
       <div className="rounded-md border">
@@ -455,7 +523,6 @@ export function JobsTable() {
         </Table>
       </div>
 
-      {/* Sheet for Job Details */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
           <SheetHeader>
