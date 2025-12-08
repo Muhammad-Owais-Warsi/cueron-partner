@@ -14,18 +14,20 @@ const IV_LENGTH = 16; // 128 bits
  */
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
-  
+
   if (!key) {
     throw new Error('ENCRYPTION_KEY environment variable is not set');
   }
-  
+
   // Ensure key is exactly 32 bytes
   const keyBuffer = Buffer.from(key, 'hex');
-  
+
   if (keyBuffer.length !== KEY_LENGTH) {
-    throw new Error(`Encryption key must be ${KEY_LENGTH} bytes (${KEY_LENGTH * 2} hex characters)`);
+    throw new Error(
+      `Encryption key must be ${KEY_LENGTH} bytes (${KEY_LENGTH * 2} hex characters)`
+    );
   }
-  
+
   return keyBuffer;
 }
 
@@ -46,15 +48,16 @@ export function encrypt(plaintext: string): string {
   if (!plaintext) {
     throw new Error('Cannot encrypt empty string');
   }
-  
+
   const key = getEncryptionKey();
+  console.log(key);
   const iv = crypto.randomBytes(IV_LENGTH);
-  
+
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  
+
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   // Return IV and encrypted data separated by colon
   return `${iv.toString('hex')}:${encrypted}`;
 }
@@ -68,22 +71,22 @@ export function decrypt(ciphertext: string): string {
   if (!ciphertext) {
     throw new Error('Cannot decrypt empty string');
   }
-  
+
   const parts = ciphertext.split(':');
-  
+
   if (parts.length !== 2) {
     throw new Error('Invalid ciphertext format');
   }
-  
+
   const key = getEncryptionKey();
   const iv = Buffer.from(parts[0], 'hex');
   const encryptedData = parts[1];
-  
+
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  
+
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 
@@ -97,7 +100,7 @@ export function hashData(data: string): string {
   if (!data) {
     throw new Error('Cannot hash empty string');
   }
-  
+
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
@@ -108,20 +111,15 @@ export function hashData(data: string): string {
  * @param salt - Optional salt (will be generated if not provided)
  * @returns Object with salt and hash
  */
-export function hashWithSalt(
-  data: string,
-  salt?: string
-): { salt: string; hash: string } {
+export function hashWithSalt(data: string, salt?: string): { salt: string; hash: string } {
   if (!data) {
     throw new Error('Cannot hash empty string');
   }
-  
-  const saltBuffer = salt
-    ? Buffer.from(salt, 'hex')
-    : crypto.randomBytes(16);
-  
+
+  const saltBuffer = salt ? Buffer.from(salt, 'hex') : crypto.randomBytes(16);
+
   const hash = crypto.pbkdf2Sync(data, saltBuffer, 100000, 64, 'sha512');
-  
+
   return {
     salt: saltBuffer.toString('hex'),
     hash: hash.toString('hex'),
@@ -149,7 +147,7 @@ export function encryptBankAccount(accountNumber: string): string {
   if (!accountNumber || accountNumber.trim().length === 0) {
     throw new Error('Bank account number cannot be empty');
   }
-  
+
   return encrypt(accountNumber.trim());
 }
 
@@ -171,7 +169,7 @@ export function encryptPAN(pan: string): string {
   if (!pan || pan.trim().length === 0) {
     throw new Error('PAN number cannot be empty');
   }
-  
+
   return encrypt(pan.trim().toUpperCase());
 }
 
@@ -191,10 +189,10 @@ export function decryptPAN(encryptedPAN: string): string {
  */
 export function isEncrypted(value: string): boolean {
   if (!value) return false;
-  
+
   const parts = value.split(':');
   if (parts.length !== 2) return false;
-  
+
   // Check if both parts are valid hex strings
   const hexRegex = /^[0-9a-f]+$/i;
   return hexRegex.test(parts[0]) && hexRegex.test(parts[1]);

@@ -1,10 +1,10 @@
 /**
  * Agency Registration API Route
  * POST /api/agencies/register
- * 
+ *
  * Handles new agency registration with validation, GSTN uniqueness check,
  * bank detail encryption, and SMS notification.
- * 
+ *
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
  */
 
@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
 
     // Validate input data with Zod
     const validation = CreateAgencyInputSchema.safeParse(body);
-    
+    console.log(validation.error);
+
     if (!validation.success) {
       const fieldErrors: Record<string, string[]> = {};
       validation.error.errors.forEach((err: any) => {
@@ -66,12 +67,7 @@ export async function POST(request: NextRequest) {
         fieldErrors[field].push(err.message);
       });
 
-      return errorResponse(
-        'VALIDATION_ERROR',
-        'Invalid input data',
-        fieldErrors,
-        400
-      );
+      return errorResponse('VALIDATION_ERROR', 'Invalid input data', fieldErrors, 400);
     }
 
     const agencyData: CreateAgencyInput = validation.data;
@@ -88,12 +84,7 @@ export async function POST(request: NextRequest) {
 
     if (checkError) {
       console.error('Error checking GSTN uniqueness:', checkError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to validate GSTN uniqueness',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to validate GSTN uniqueness', undefined, 500);
     }
 
     if (existingAgency) {
@@ -118,12 +109,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (encryptError) {
       console.error('Encryption error:', encryptError);
-      return errorResponse(
-        'ENCRYPTION_ERROR',
-        'Failed to encrypt sensitive data',
-        undefined,
-        500
-      );
+      return errorResponse('ENCRYPTION_ERROR', 'Failed to encrypt sensitive data', undefined, 500);
     }
 
     // Create agency record with pending_approval status
@@ -154,12 +140,7 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error creating agency:', insertError);
-      return errorResponse(
-        'DATABASE_ERROR',
-        'Failed to create agency record',
-        undefined,
-        500
-      );
+      return errorResponse('DATABASE_ERROR', 'Failed to create agency record', undefined, 500);
     }
 
     // Send SMS notification
@@ -184,12 +165,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Unexpected error in agency registration:', error);
-    return errorResponse(
-      'INTERNAL_ERROR',
-      'An unexpected error occurred',
-      undefined,
-      500
-    );
+    return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
   }
 }
 
@@ -201,7 +177,7 @@ async function sendRegistrationSMS(phone: string, agencyId: string): Promise<voi
   // TODO: Implement SMS sending using Twilio/MSG91 when Task 3 is complete
   // For now, just log the notification
   console.log(`[SMS] Registration confirmation sent to ${phone} for agency ${agencyId}`);
-  
+
   // Simulate SMS sending
   // In production, this would call Twilio/MSG91 API:
   // const message = `Thank you for registering with Cueron! Your application is under review. Agency ID: ${agencyId}`;
