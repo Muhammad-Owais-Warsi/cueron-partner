@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useUserProfile } from '@/hooks';
 import ThemeToggle from '../theme/theme-toggle';
+import { Spinner } from '../ui/spinner';
 
 const data = {
   user: {
@@ -72,17 +73,11 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, profile } = useUserProfile();
+  const { profile, loading } = useUserProfile();
 
-  // const displayName = profile?.name || user?.email || user?.phone || 'User';
-  // const displayRole = profile?.role || 'viewer';
-  // const agencyName = profile?.agency?.name;
-
-  const userData = {
-    identity: profile?.name || user?.email || user?.phone || 'User',
-    role: profile?.role || 'viewer',
-    agency: profile?.agency?.name,
-  };
+  if (loading) {
+    <Spinner />;
+  }
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -98,13 +93,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/*<NavSecondary items={data.navSecondary} className="mt-auto" />*/}
         <ThemeToggle variant="label" className="mt-auto" />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={userData} />
+        <NavUser profile={profile} />
       </SidebarFooter>
     </Sidebar>
   );

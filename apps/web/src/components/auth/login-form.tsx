@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { sendMagicLink, signInWithEmailAndPassword, signUpWithEmailAndPassword } from '@/lib/auth';

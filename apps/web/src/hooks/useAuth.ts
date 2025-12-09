@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface UserProfile {
-  type: 'agency_user' | 'engineer';
-  id: string;
+  // type: 'manager' | 'engineer';
+  // id: string;
   user_id: string;
   name: string;
   email: string;
@@ -42,48 +42,53 @@ export function useAuth() {
 
   useEffect(() => {
     const supabase = createClient();
-    
+
     // Get initial session
     const getSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             error,
             loading: false,
           }));
           return;
         }
-        
-        setState(prev => ({
+
+        setState((prev) => ({
           ...prev,
           session,
           user: session?.user ?? null,
           loading: false,
         }));
       } catch (error) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           error: error instanceof Error ? error : new Error('Unknown error'),
           loading: false,
         }));
       }
     };
-    
+
     getSession();
-    
+
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState(prev => ({
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setState((prev) => ({
         ...prev,
         session,
         user: session?.user ?? null,
         loading: false,
       }));
     });
-    
+
     return () => {
       subscription.unsubscribe();
     };
@@ -120,24 +125,24 @@ export function useSession() {
   const refreshSession = async () => {
     const supabase = createClient();
     const { data, error } = await supabase.auth.refreshSession();
-    
+
     if (error) {
       console.warn('Session refresh warning:', error.message);
       return null;
     }
-    
+
     return data.session;
   };
 
   const signOut = async () => {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
-    
+
     // Even if there's an error (like no session), still redirect to login
     if (error) {
       console.warn('Sign out warning:', error.message);
     }
-    
+
     router.push('/login');
     router.refresh();
   };
@@ -170,67 +175,51 @@ export function useUserProfile() {
     const fetchProfile = async () => {
       try {
         const supabase = createClient();
-        
-        // Fetch user profile from agency_users table
-        const { data: agencyUser, error: agencyUserError } = await supabase
-          .from('agency_users')
-          .select(`
-            id,
-            role,
-            name,
-            email,
-            is_demo_user,
-            agencies (
-              id,
-              name,
-              type,
-              partnership_tier
-            )
-          `)
-          .eq('user_id', user.id)
+
+        // fetch the role of the signed-in user
+        const { data, error } = await supabase
+          .from('users')
+          .select(`email, role`)
+          .eq('id', user.id)
           .single();
-        
-        if (agencyUserError) {
-          console.error('Error fetching agency user:', agencyUserError);
-          throw new Error('Failed to fetch user profile');
-        }
-        
-        if (!agencyUser) {
-          // User exists but has no agency association
-          const userProfile: UserProfile = {
-            type: 'agency_user',
-            id: user.id,
-            user_id: user.id,
-            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-            email: user.email || '',
-            role: 'user',
-            is_demo_user: false,
-            agency: undefined,
-          };
-          
-          setProfile(userProfile);
+
+        if (error || !data) {
+          setProfile(null);
           setLoading(false);
           return;
         }
-        
-        const userProfile: UserProfile = {
-          type: 'agency_user',
-          id: agencyUser.id,
-          user_id: user.id,
-          name: agencyUser.name,
-          email: agencyUser.email,
-          role: agencyUser.role,
-          is_demo_user: agencyUser.is_demo_user ?? false,
-          agency: agencyUser.agencies && agencyUser.agencies.length > 0 ? {
-            id: agencyUser.agencies[0].id,
-            name: agencyUser.agencies[0].name,
-            type: agencyUser.agencies[0].type,
-            partnership_tier: agencyUser.agencies[0].partnership_tier,
-          } : undefined,
-        };
 
-        setProfile(userProfile);
-        setLoading(false);
+        console.log('SIGNED IN USER', data);
+
+        switch (data.role) {
+          case 'admin':
+            setProfile({
+              user_id: user.id,
+              name:
+                user.raw_user_metadata.firstName + user.raw_user_metadata.lastName ||
+                user.user_metadata.firstName + user.user_metadata.lastName,
+              email: user?.email,
+              role: 'admin',
+              is_demo_user: false,
+              agency: undefined,
+            });
+            setLoading(false);
+            break;
+          case 'manager':
+            const agencyProfile = await getAgencyManagerProfile(user);
+            if (agencyProfile) {
+              setProfile(agencyProfile);
+              setLoading(false);
+            }
+            break;
+          case 'engineer':
+            const engineerProfile = await getEngineerProfile(user);
+            if (engineerProfile) {
+              setProfile(engineerProfile);
+              setLoading(false);
+            }
+            break;
+        }
       } catch (err) {
         console.error('Error in fetchProfile:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch profile'));
@@ -247,4 +236,75 @@ export function useUserProfile() {
     loading: authLoading || loading,
     error,
   };
+}
+
+async function getEngineerProfile(user: any) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('engineers')
+    .select(
+      `
+      name,
+      email,
+      agencies (
+        id,
+        name,
+        type,
+        partnership_tier
+      )
+    `
+    )
+    .eq('user_id', user.id)
+    .single();
+
+  if (error || !data) {
+    return;
+  }
+
+  const profile: UserProfile = {
+    user_id: user.id,
+    name: data.name,
+    email: data.email,
+    role: 'engineer',
+    is_demo_user: false,
+    agency: {
+      id: data?.agencies?.id,
+      name: data?.agencies?.name,
+      type: data?.agencies?.type,
+      partnership_tier: data?.agencies?.partnership_tier,
+    },
+  };
+
+  return profile;
+}
+
+async function getAgencyManagerProfile(user: any) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('agencies')
+    .select(`id, name, contact_person, email, type, partnership_tier`)
+    .eq('email', user.email)
+    .single();
+
+  if (error || !data) {
+    return;
+  }
+
+  const profile: UserProfile = {
+    user_id: user.id,
+    name: data?.contact_person,
+    email: data?.email,
+    role: 'manager',
+    is_demo_user: false,
+    agency: {
+      id: data?.id,
+      name: data?.name,
+      type: data?.type,
+      partnership_tier: data?.partnership_tier,
+    },
+  };
+
+  return profile;
 }

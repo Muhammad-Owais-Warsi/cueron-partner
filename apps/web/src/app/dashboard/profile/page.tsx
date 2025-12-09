@@ -10,21 +10,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, Shield, MapPin, Calendar, Star } from 'lucide-react';
+import { User, Mail, Phone, Shield, Calendar, Star, Building } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { profile, loading } = useUserProfile();
+
   const [formData, setFormData] = useState({
-    name: user?.user_metadata?.name || '',
-    email: user?.email || '',
+    name: profile?.name || '',
     phone: user?.user_metadata?.phone || '',
   });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Updating profile:', formData);
-  };
 
   if (loading) {
     return (
@@ -34,7 +29,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
+  if (!user || !profile) {
     return (
       <div className="p-6">
         <Card>
@@ -46,58 +41,52 @@ export default function ProfilePage() {
     );
   }
 
-  const getUserRole = () => {
-    if (profile?.type === 'engineer') {
-      return `Engineer at ${profile.agency?.name || 'Agency'}`;
-    } else if (profile?.type === 'agency_user') {
-      return `${profile.role} at ${profile.agency?.name || 'Agency'}`;
-    }
-    return 'User';
-  };
-
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map((word) => word[0])
+      .map((w) => w[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Updating profile:', formData);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* LEFT SECTION */}
       <div className="lg:col-span-1 space-y-6">
+        {/* Profile Card */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <Avatar className="h-24 w-24">
                 <AvatarFallback className="text-2xl font-semibold">
-                  {getInitials(user.user_metadata?.name || user.email || 'U')}
+                  {getInitials(profile.name || 'U')}
                 </AvatarFallback>
               </Avatar>
 
-              <div>
-                <h2 className="text-xl font-semibold">{user.user_metadata?.name || 'User'}</h2>
-                <p className="text-muted-foreground text-sm">{getUserRole()}</p>
-              </div>
-
-              <Badge variant="secondary" className="mt-2">
-                {profile?.type === 'engineer' ? 'Engineer' : 'Agency User'}
+              <Badge variant="secondary" className="mt-2 capitalize">
+                {profile.role}
               </Badge>
             </div>
 
             <Separator className="my-6" />
 
+            {/* INFO SECTION */}
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{user.email}</span>
+                <span className="text-muted-foreground">{profile.email}</span>
               </div>
 
-              {user.user_metadata?.phone && (
+              {formData.phone && (
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{user.user_metadata.phone}</span>
+                  <span className="text-muted-foreground">{formData.phone}</span>
                 </div>
               )}
 
@@ -112,16 +101,34 @@ export default function ProfilePage() {
                 </span>
               </div>
 
-              {profile?.type === 'engineer' && (
+              {/* ENGINEER ONLY */}
+              {profile.role === 'engineer' && (
                 <div className="flex items-center gap-3 text-sm">
                   <Star className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">4.8 Rating</span>
+                </div>
+              )}
+
+              {/* MANAGER ONLY */}
+              {profile.role === 'manager' && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Agency Manager</span>
+                </div>
+              )}
+
+              {/* ADMIN ONLY */}
+              {profile.role === 'admin' && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Shield className="h-4 w-4 text-red-500" />
+                  <span className="text-muted-foreground">Platform Administrator</span>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
+        {/* SECURITY */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -143,7 +150,9 @@ export default function ProfilePage() {
         </Card>
       </div>
 
+      {/* RIGHT SECTION */}
       <div className="lg:col-span-2 space-y-6">
+        {/* Personal Info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -160,7 +169,7 @@ export default function ProfilePage() {
                     <Input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
                       placeholder="Enter your full name"
                     />
                   </Field>
@@ -170,23 +179,21 @@ export default function ProfilePage() {
                     <Input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
+                      onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
                       maxLength={10}
+                      placeholder="Enter your phone number"
                     />
                   </Field>
                 </div>
 
                 <Field>
                   <FieldLabel>Email Address</FieldLabel>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="email"
-                      value={user.email}
-                      readOnly
-                      className="bg-muted text-muted-foreground"
-                    />
-                  </div>
+                  <Input
+                    type="email"
+                    value={profile.email}
+                    readOnly
+                    className="bg-muted text-muted-foreground"
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
                     Email address cannot be changed
                   </p>
