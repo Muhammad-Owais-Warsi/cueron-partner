@@ -8,7 +8,7 @@ import { JobsTable } from '@/components/jobs';
 
 function JobsPageContent() {
   return (
-    <div className="container mx-auto p-6 space-y-4 px-0 flex-1 px-6">
+    <div className="container mx-auto p-6 space-y-4 flex-1 px-6">
       <div>
         <h1 className="text-3xl font-semibold">Jobs</h1>
         <p className="text-muted-foreground mt-1">

@@ -325,7 +325,6 @@ export function JobsTable() {
                 <SelectValue>Select Engineer</SelectValue>
               </SelectTrigger>
               <SelectContent>
-  
                 {engineers.length === 0 ? (
                   <>
                     <SelectItem value="unassigned">
@@ -418,9 +417,8 @@ export function JobsTable() {
         throw new Error('Failed to load engineers');
       }
       const data = await response.json();
-      
+
       setEngineers(data.engineers);
- 
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'An error occurred while loading engineers';
@@ -428,8 +426,7 @@ export function JobsTable() {
     }
   };
 
-  
-  // place this correctly 
+  // place this correctly
   useEffect(() => {
     if (user) {
       void loadEngineers();
@@ -503,7 +500,7 @@ export function JobsTable() {
                 <TableRow
                   key={row.id}
                   onClick={(e) => handleRowClick(row.original, e)}
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

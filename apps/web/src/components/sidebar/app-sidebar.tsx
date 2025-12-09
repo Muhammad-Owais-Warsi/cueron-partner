@@ -27,6 +27,7 @@ import { useUserProfile } from '@/hooks';
 import ThemeToggle from '../theme/theme-toggle';
 import { Spinner } from '../ui/spinner';
 
+// maybe for admin we create a complete new route, coz the fetching of data will be completely different
 const data = {
   user: {
     name: 'shadcn',
@@ -43,32 +44,32 @@ const data = {
       title: 'Jobs',
       url: '/dashboard/jobs',
       icon: Briefcase,
-      roles: ['admin', 'manager', 'viewer'],
+      roles: ['manager', 'engineer'],
     },
     {
       title: 'Team',
       url: '/dashboard/team',
       icon: Users,
-      roles: ['admin', 'manager', 'viewer'],
+      roles: ['manager'],
     },
     {
       title: 'Analytics',
       url: '/dashboard/analytics',
       icon: BarChart3,
-      roles: ['admin', 'manager', 'viewer'],
+      roles: ['manager'],
     },
     {
       title: 'Payments',
       url: '/dashboard/payments',
       icon: CreditCard,
-      roles: ['admin', 'manager', 'viewer'],
+      roles: ['manager', 'engineer'],
     },
-    {
-      title: 'Settings',
-      url: '/dashboard/settings',
-      icon: Settings,
-      roles: ['admin', 'manager'],
-    },
+    // {
+    //   title: 'Settings',
+    //   url: '/dashboard/settings',
+    //   icon: Settings,
+    //   roles: ['admin', 'manager'],
+    // },
   ],
 };
 
@@ -78,6 +79,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (loading) {
     <Spinner />;
   }
+
+  const userRole = profile?.role ?? 'engineer';
+
+  // ⭐ Filter nav items based on allowed roles
+  const filteredNav = data.navMain.filter((item) => {
+    if (!item.roles) return true; // public items
+    return item.roles.includes(userRole);
+  });
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -95,7 +104,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={filteredNav} />
         <ThemeToggle variant="label" className="mt-auto" />
       </SidebarContent>
 
