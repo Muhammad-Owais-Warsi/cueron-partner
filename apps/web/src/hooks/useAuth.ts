@@ -262,18 +262,22 @@ async function getEngineerProfile(user: any) {
     return;
   }
 
+  const agency = data.agencies
+    ? {
+        id: data.agencies.id,
+        name: data.agencies.name,
+        type: data.agencies.type,
+        partnership_tier: data.agencies.partnership_tier,
+      }
+    : null;
+
   const profile: UserProfile = {
     user_id: user.id,
     name: data.name,
     email: data.email,
     role: 'engineer',
     is_demo_user: false,
-    agency: {
-      id: data?.agencies?.id,
-      name: data?.agencies?.name,
-      type: data?.agencies?.type,
-      partnership_tier: data?.agencies?.partnership_tier,
-    },
+    agency, // ⭐ Now safely nullable
   };
 
   return profile;
