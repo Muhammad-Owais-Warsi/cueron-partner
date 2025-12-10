@@ -64,13 +64,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'analytics:read',
     'settings:read',
   ],
-  viewer: [
-    'agency:read',
-    'engineer:read',
-    'job:read',
-    'payment:read',
-    'analytics:read',
-  ],
+  viewer: ['agency:read', 'engineer:read', 'job:read', 'payment:read', 'analytics:read'],
   engineer: ['job:read', 'job:write'],
 };
 
@@ -85,20 +79,14 @@ export function hasPermission(role: UserRole, permission: Permission): boolean {
 /**
  * Check if a role has all of the specified permissions
  */
-export function hasAllPermissions(
-  role: UserRole,
-  permissions: Permission[]
-): boolean {
+export function hasAllPermissions(role: UserRole, permissions: Permission[]): boolean {
   return permissions.every((permission) => hasPermission(role, permission));
 }
 
 /**
  * Check if a role has any of the specified permissions
  */
-export function hasAnyPermission(
-  role: UserRole,
-  permissions: Permission[]
-): boolean {
+export function hasAnyPermission(role: UserRole, permissions: Permission[]): boolean {
   return permissions.some((permission) => hasPermission(role, permission));
 }
 
@@ -197,10 +185,7 @@ export function validateDataIsolation(
 /**
  * Check if user can access a specific agency's data
  */
-export function canAccessAgencyData(
-  userAgencyId: string | null,
-  targetAgencyId: string
-): boolean {
+export function canAccessAgencyData(userAgencyId: string | null, targetAgencyId: string): boolean {
   return validateDataIsolation(userAgencyId, targetAgencyId);
 }
 
@@ -219,10 +204,7 @@ export class AuthorizationError extends Error {
 
 export class InsufficientPermissionsError extends AuthorizationError {
   constructor(requiredPermission: Permission) {
-    super(
-      `Insufficient permissions. Required: ${requiredPermission}`,
-      'INSUFFICIENT_PERMISSIONS'
-    );
+    super(`Insufficient permissions. Required: ${requiredPermission}`, 'INSUFFICIENT_PERMISSIONS');
   }
 }
 
@@ -249,10 +231,7 @@ export function assertPermission(role: UserRole, permission: Permission): void {
  * Assert that user can access agency data
  * Throws error if data isolation is violated
  */
-export function assertAgencyAccess(
-  userAgencyId: string | null,
-  targetAgencyId: string
-): void {
+export function assertAgencyAccess(userAgencyId: string | null, targetAgencyId: string): void {
   if (!canAccessAgencyData(userAgencyId, targetAgencyId)) {
     throw new DataIsolationError();
   }
@@ -272,10 +251,7 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
 /**
  * Check if a role has equal or higher privileges than another role
  */
-export function hasEqualOrHigherRole(
-  userRole: UserRole,
-  requiredRole: UserRole
-): boolean {
+export function hasEqualOrHigherRole(userRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
 

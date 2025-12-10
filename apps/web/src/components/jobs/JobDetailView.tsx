@@ -2,440 +2,306 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useJobUpdates } from '@/lib/realtime/hooks';
-import { JobMap } from './JobMap';
-import { EngineerSelector } from './EngineerSelector';
-import { AssignmentConfirmDialog } from './AssignmentConfirmDialog';
-import { JobStatusTimeline } from './JobStatusTimeline';
 import { formatDate, formatCurrency } from '@/lib/utils/formatting';
-import type { Job } from '@cueron/types/src/job';
-import type { Engineer } from '@cueron/types/src/engineer';
 
-interface JobDetailData {
-  job: Job & {
-    skill_requirement_highlighted: boolean;
-    skill_requirement: {
-      level: number;
-      description: string;
-    };
-  };
-  completeness: {
-    is_complete: boolean;
-    missing_fields: string[];
-  };
-  engineer_distances: Array<{
-    engineer_id: string;
-    distance_km: number;
-    duration_minutes?: number;
-  }>;
-  metadata: {
-    distance_calculation_method: string;
-    available_engineers_count: number;
-  };
-}
+import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useUserProfile } from '@/hooks';
 
-interface EngineerWithDistance extends Engineer {
-  distance_km: number;
-  duration_minutes?: number;
-}
-
-export function JobDetailView({ jobId }: { jobId: string }) {
+export function JobDetailView({ jobNumber }: { jobNumber: string }) {
   const router = useRouter();
-  const [jobData, setJobData] = useState<JobDetailData | null>(null);
-  const [engineers, setEngineers] = useState<EngineerWithDistance[]>([]);
+  const { profile, loading: profileLoading } = useUserProfile();
+
+  const [job, setJob] = useState<any>(null);
+  const [engineers, setEngineers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEngineers, setLoadingEngineers] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEngineerId, setSelectedEngineerId] = useState<string | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [assigning, setAssigning] = useState(false);
 
-  // Real-time updates for job status
-  const { status: realtimeStatus, location: realtimeLocation, lastUpdate } = useJobUpdates(jobId);
-
-  // Fetch job details
+  // -----------------------------
+  // FETCH JOB DETAILS
+  // -----------------------------
   useEffect(() => {
-    void fetchJobDetails();
-  }, [jobId, fetchJobDetails]);
+    async function fetchJobDetails() {
+      try {
+        setLoading(true);
+        setError(null);
 
-  // Update job status from real-time updates
+        const response = await fetch(`/api/jobs/${jobNumber}`);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Failed to fetch job details');
+        }
+
+        const data = await response.json();
+        setJob(data);
+      } catch (err) {
+        console.error('Error fetching job details:', err);
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchJobDetails();
+  }, [jobNumber]);
+
+  // -----------------------------
+  // FETCH ENGINEERS
+  // -----------------------------
   useEffect(() => {
-    if (realtimeStatus && jobData) {
-      setJobData({
-        ...jobData,
-        job: {
-          ...jobData.job,
-          status: realtimeStatus as Job['status'],
-        },
-      });
-    }
-  }, [realtimeStatus, jobData]);
+    async function loadEngineers() {
+      try {
+        if (!profile?.agency?.id) return;
 
-  async function fetchJobDetails() {
-    try {
-      setLoading(true);
-      setError(null);
+        setLoadingEngineers(true);
+        const res = await fetch(`/api/agencies/${profile.agency.id}/engineers`);
 
-      const response = await fetch(`/api/jobs/${jobId}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to fetch job details');
+        if (!res.ok) throw new Error('Failed to load engineers');
+
+        const list = await res.json();
+        console.log('ENG:', list);
+
+        // FIX HERE
+        const extracted = Array.isArray(list) ? list : list.engineers || [];
+
+        setEngineers(extracted);
+      } catch (err) {
+        console.error('Engineer load error', err);
+      } finally {
+        setLoadingEngineers(false);
       }
-
-      const data: JobDetailData = await response.json();
-      setJobData(data);
-
-      // Fetch engineer details for those with distances
-      if (data.engineer_distances.length > 0) {
-        await fetchEngineers(data.engineer_distances);
-      }
-    } catch (err) {
-      console.error('Error fetching job details:', err);
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
     }
+
+    loadEngineers();
+  }, [profile, jobNumber]);
+
+  // ----------------------------------------------
+  // WAIT IF PROFILE NOT READY
+  // ----------------------------------------------
+  if (profileLoading || !profile) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Spinner />
+      </div>
+    );
   }
 
-  async function fetchEngineers(distances: Array<{ engineer_id: string; distance_km: number; duration_minutes?: number }>) {
-    try {
-      const supabase = createClient();
-      const engineerIds = distances.map(d => d.engineer_id);
-
-      const { data, error } = await supabase
-        .from('engineers')
-        .select('*')
-        .in('id', engineerIds);
-
-      if (error) throw error;
-
-      // Merge engineer data with distance information
-      const engineersWithDistance: EngineerWithDistance[] = (data || []).map((engineer: Engineer) => {
-        const distanceInfo = distances.find(d => d.engineer_id === engineer.id);
-        return {
-          ...engineer,
-          distance_km: distanceInfo?.distance_km || 0,
-          duration_minutes: distanceInfo?.duration_minutes,
-        };
-      });
-
-      // Sort by distance
-      engineersWithDistance.sort((a, b) => a.distance_km - b.distance_km);
-      setEngineers(engineersWithDistance);
-    } catch (err) {
-      console.error('Error fetching engineers:', err);
-    }
+  if (!profile.agency || !profile.agency.id) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-3">
+        <Spinner />
+        <p className="text-sm text-muted-foreground">Loading agency details…</p>
+      </div>
+    );
   }
 
-  async function handleAssignEngineer() {
-    if (!selectedEngineerId) return;
-
-    try {
-      setAssigning(true);
-      const response = await fetch(`/api/jobs/${jobId}/assign`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          engineer_id: selectedEngineerId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to assign engineer');
-      }
-
-      // Refresh job details
-      await fetchJobDetails();
-      setShowConfirmDialog(false);
-      setSelectedEngineerId(null);
-    } catch (err) {
-      console.error('Error assigning engineer:', err);
-      alert(`Failed to assign engineer: ${(err as Error).message}`);
-    } finally {
-      setAssigning(false);
-    }
-  }
-
+  // ----------------------------------------------
+  // LOADING JOB DETAILS
+  // ----------------------------------------------
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <Spinner />
       </div>
     );
   }
 
-  if (error || !jobData) {
+  // ----------------------------------------------
+  // ERROR
+  // ----------------------------------------------
+  if (error || !job) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-red-600 mb-4">{error || 'Job not found'}</div>
-        <button
-          onClick={() => router.push('/dashboard/jobs')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Back to Jobs
-        </button>
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-red-600">{error || 'Job not found'}</p>
+        <Button onClick={() => router.push('/dashboard/jobs')}>Back to Jobs</Button>
       </div>
     );
   }
 
-  const { job } = jobData;
-  const canAssign = !job.assigned_engineer_id && (job.status === 'pending' || job.status === 'assigned');
-
+  // ----------------------------------------------
+  // MAIN RENDER
+  // ----------------------------------------------
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between">
-        <div>
-          <button
-            onClick={() => router.push('/dashboard/jobs')}
-            className="text-blue-600 hover:text-blue-700 mb-2 flex items-center"
-          >
-            ← Back to Jobs
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">{job.job_number}</h1>
-          <p className="text-gray-600 mt-1">
-            {job.client_name} • {job.job_type}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              job.status === 'completed'
-                ? 'bg-green-100 text-green-800'
-                : job.status === 'onsite' || job.status === 'travelling'
-                ? 'bg-blue-100 text-blue-800'
-                : job.status === 'assigned' || job.status === 'accepted'
-                ? 'bg-yellow-100 text-yellow-800'
-                : job.status === 'cancelled'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-          </span>
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
+        <Button variant="ghost" onClick={() => router.push('/dashboard/jobs')} className="mb-2">
+          ← Back to Jobs
+        </Button>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="px-3 py-1">
+            {job.status}
+          </Badge>
+
+          <Badge
+            variant={
               job.urgency === 'emergency'
-                ? 'bg-red-100 text-red-800'
+                ? 'destructive'
                 : job.urgency === 'urgent'
-                ? 'bg-orange-100 text-orange-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}
+                  ? 'secondary'
+                  : 'outline'
+            }
+            className="px-3 py-1"
           >
-            {job.urgency.charAt(0).toUpperCase() + job.urgency.slice(1)}
-          </span>
+            {job.urgency}
+          </Badge>
         </div>
       </div>
 
-      {/* Real-time update indicator */}
-      {lastUpdate && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center">
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse mr-2"></div>
-          <span className="text-sm text-blue-800">
-            Last updated: {new Date(lastUpdate).toLocaleTimeString()}
-          </span>
-        </div>
-      )}
+      <h1 className="text-2xl font-bold">{job.job_number}</h1>
+      <p className="text-muted-foreground">
+        {job.client_name} • {job.job_type}
+      </p>
 
+      {/* GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+        {/* LEFT SECTION */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Job Details Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Details</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Client Name</p>
-                <p className="font-medium">{job.client_name}</p>
+          {/* JOB DETAILS */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Job Details</CardTitle>
+              <CardDescription>Complete information about this work order</CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Detail label="Client Name" value={job.client_name} />
+                <Detail label="Client Phone" value={job.client_phone} />
+                <Detail label="Job Type" value={job.job_type} />
+                <Detail label="Equipment Type" value={job.equipment_type} />
+
+                {job.scheduled_time && (
+                  <Detail label="Scheduled Time" value={formatDate(job.scheduled_time)} />
+                )}
+
+                {job.service_fee && (
+                  <Detail label="Service Fee" value={formatCurrency(job.service_fee)} />
+                )}
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Client Phone</p>
-                <p className="font-medium">{job.client_phone}</p>
+
+              <Separator />
+
+              {/* Skill */}
+              <div className="p-4 rounded-lg border bg-yellow-50">
+                <p className="text-sm font-medium text-yellow-800">Required Skill Level</p>
+                <p className="text-lg font-bold text-yellow-900">
+                  Level {job.required_skill_level}
+                </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Job Type</p>
-                <p className="font-medium">{job.job_type}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Equipment Type</p>
-                <p className="font-medium">{job.equipment_type}</p>
-              </div>
-              {job.scheduled_time && (
+
+              {/* Issue */}
+              {job.issue_description && (
+                <Detail label="Issue Description" value={job.issue_description} />
+              )}
+
+              {/* Equipment */}
+              {job.equipment_details && (
                 <div>
-                  <p className="text-sm text-gray-600">Scheduled Time</p>
-                  <p className="font-medium">{formatDate(job.scheduled_time)}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Equipment Details</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Detail label="Brand" value={job.equipment_details.brand} small />
+                    <Detail label="Model" value={job.equipment_details.model} small />
+                    <Detail label="Serial" value={job.equipment_details.serial_number} small />
+                    <Detail label="Capacity" value={job.equipment_details.capacity} small />
+                  </div>
                 </div>
               )}
-              {job.service_fee && (
-                <div>
-                  <p className="text-sm text-gray-600">Service Fee</p>
-                  <p className="font-medium">{formatCurrency(job.service_fee)}</p>
-                </div>
-              )}
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Skill Requirement - Highlighted */}
-            <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-              <p className="text-sm font-semibold text-yellow-800">Required Skill Level</p>
-              <p className="text-lg font-bold text-yellow-900">
-                Level {job.skill_requirement.level}
-              </p>
-              <p className="text-sm text-yellow-700 mt-1">
-                {job.skill_requirement.description}
-              </p>
-            </div>
-
-            {job.issue_description && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600">Issue Description</p>
-                <p className="mt-1 text-gray-900">{job.issue_description}</p>
-              </div>
-            )}
-
-            {job.equipment_details && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Equipment Details</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {job.equipment_details.brand && (
-                    <div>
-                      <span className="text-gray-600">Brand:</span>{' '}
-                      <span className="font-medium">{job.equipment_details.brand}</span>
-                    </div>
-                  )}
-                  {job.equipment_details.model && (
-                    <div>
-                      <span className="text-gray-600">Model:</span>{' '}
-                      <span className="font-medium">{job.equipment_details.model}</span>
-                    </div>
-                  )}
-                  {job.equipment_details.serial_number && (
-                    <div>
-                      <span className="text-gray-600">Serial:</span>{' '}
-                      <span className="font-medium">{job.equipment_details.serial_number}</span>
-                    </div>
-                  )}
-                  {job.equipment_details.capacity && (
-                    <div>
-                      <span className="text-gray-600">Capacity:</span>{' '}
-                      <span className="font-medium">{job.equipment_details.capacity}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Location Card with Map */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Service Location</h2>
-            <div className="mb-4">
-              <p className="text-gray-900">{job.site_location.address}</p>
-              <p className="text-gray-600">
+          {/* LOCATION */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Service Location</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-medium">{job.site_location.address}</p>
+              <p className="text-muted-foreground">
                 {job.site_location.city}, {job.site_location.state}
               </p>
-            </div>
-            <JobMap
-              jobLocation={{
-                lat: job.site_location.lat,
-                lng: job.site_location.lng,
-              }}
-              engineerLocation={realtimeLocation}
-            />
-          </div>
-
-          {/* Status Timeline */}
-          <JobStatusTimeline job={job} />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sidebar */}
+        {/* RIGHT SIDEBAR — ENGINEERS */}
         <div className="space-y-6">
-          {/* Engineer Assignment */}
-          {canAssign && engineers.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Assign Engineer</h2>
-              <EngineerSelector
-                engineers={engineers}
-                selectedEngineerId={selectedEngineerId}
-                onSelect={setSelectedEngineerId}
-              />
-              <button
-                onClick={() => setShowConfirmDialog(true)}
-                disabled={!selectedEngineerId}
-                className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Assign Engineer
-              </button>
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Engineers</CardTitle>
+              <CardDescription>Engineers matching or near required skill</CardDescription>
+            </CardHeader>
 
-          {/* Assigned Engineer Info */}
-          {job.assigned_engineer_id && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Assigned Engineer</h2>
-              {engineers.find(e => e.id === job.assigned_engineer_id) ? (
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {engineers.find(e => e.id === job.assigned_engineer_id)?.name}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {engineers.find(e => e.id === job.assigned_engineer_id)?.phone}
-                  </p>
-                  {job.assigned_at && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Assigned: {formatDate(job.assigned_at)}
-                    </p>
-                  )}
+            <CardContent>
+              {loadingEngineers ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <p className="text-gray-600">Loading engineer details...</p>
-              )}
-            </div>
-          )}
+              ) : engineers?.length ? (
+                <ScrollArea className="h-72 pr-2">
+                  <div className="space-y-4">
+                    {engineers.map((eng) => (
+                      <div
+                        key={eng.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={eng.avatar || ''} />
+                            <AvatarFallback>{eng.name?.[0]}</AvatarFallback>
+                          </Avatar>
 
-          {/* Available Engineers */}
-          {engineers.length > 0 && !canAssign && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Available Engineers ({engineers.length})
-              </h2>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {engineers.slice(0, 5).map((engineer) => (
-                  <div key={engineer.id} className="border-b border-gray-200 pb-3 last:border-0">
-                    <p className="font-medium text-gray-900">{engineer.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {engineer.distance_km.toFixed(1)} km away
-                      {engineer.duration_minutes && ` • ${engineer.duration_minutes} min`}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Skill Level {engineer.skill_level} • {engineer.availability_status}
-                    </p>
+                          <div>
+                            <p className="font-medium">{eng.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Skill Level: {eng.skill_level}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Badge variant={eng.status === 'available' ? 'outline' : 'secondary'}>
+                          {eng.status}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </ScrollArea>
+              ) : (
+                <p className="text-sm text-muted-foreground">No engineers found.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Assignment Confirmation Dialog */}
-      {showConfirmDialog && selectedEngineerId && (
-        <AssignmentConfirmDialog
-          engineer={engineers.find(e => e.id === selectedEngineerId)!}
-          job={job}
-          onConfirm={async () => {
-            await handleAssignEngineer();
-          }}
-          onCancel={() => {
-            setShowConfirmDialog(false);
-            setSelectedEngineerId(null);
-          }}
-          isAssigning={assigning}
-        />
-      )}
+// ----------------------------------------------
+// Small reusable Detail component
+// ----------------------------------------------
+function Detail({ label, value, small = false }: { label: string; value: any; small?: boolean }) {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={`font-medium ${small ? 'text-sm' : ''}`}>{value}</p>
     </div>
   );
 }

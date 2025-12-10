@@ -8,29 +8,29 @@ import { JobDetailView } from '@/components/jobs/JobDetailView';
 function JobDetailPageContent() {
   const params = useParams();
   const router = useRouter();
-  const jobId = params.id as string;
-  const [loading, setLoading] = useState(true);
+  const jobNumber = params.id as string;
+  // const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Validate job ID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(jobId)) {
-      setError('Invalid job ID');
-      setLoading(false);
-      return;
-    }
+  // useEffect(() => {
+  //   // Validate job ID format
+  //   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  //   if (!uuidRegex.test(jobId)) {
+  //     setError('Invalid job ID');
+  //     setLoading(false);
+  //     return;
+  //   }
 
-    setLoading(false);
-  }, [jobId]);
+  //   setLoading(false);
+  // }, [jobId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600">Loading job details...</div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center h-64">
+  //       <div className="text-gray-600">Loading job details...</div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -46,7 +46,7 @@ function JobDetailPageContent() {
     );
   }
 
-  return <JobDetailView jobId={jobId} />;
+  return <JobDetailView jobNumber={jobNumber} />;
 }
 
 export default function JobDetailPage() {

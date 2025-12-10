@@ -79,59 +79,74 @@ export interface UserSession {
  */
 export async function getUserSession(): Promise<UserSession | null> {
   const supabase = createServerClient();
-  
+
   // Get authenticated user
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  // console.log('SEVER', user);
+
   if (userError || !user) {
     return null;
   }
 
   // Get user role, agency, and demo flag from agency_users table
   const { data: agencyUser, error: roleError } = await supabase
-    .from('agency_users')
-    .select('role, agency_id, is_demo_user')
-    .eq('user_id', user.id)
-    .maybeSingle();
+    .from('users')
+    .select(
+      `role, agencies (
+      id
+      )`
+    )
+    .eq('email', user.email)
+    .single();
+
+  // console.log('AGENCY_USER', agencyUser);
 
   if (roleError) {
     console.error('Error fetching user role:', roleError);
     return null;
   }
 
-  // If no agency_users record, check if user is an engineer
+  // // If no agency_users record, check if user is an engineer
+  // if (!agencyUser) {
+  //   const { data: engineer, error: engineerError } = await supabase
+  //     .from('engineers')
+  //     .select('id, agency_id')
+  //     .eq('user_id', user.id)
+  //     .maybeSingle();
+
+  //   if (engineerError) {
+  //     console.error('Error fetching engineer:', engineerError);
+  //     return null;
+  //   }
+
+  //   if (engineer) {
+  //     return {
+  //       user_id: user.id,
+  //       role: 'engineer',
+  //       agency_id: engineer.agency_id,
+  //       is_demo_user: false, // Engineers default to non-demo
+  //       email: user.email,
+  //       phone: user.phone,
+  //     };
+  //   }
+
+  //   // User exists but has no role assigned
+  //   return null;
+  // }
+
   if (!agencyUser) {
-    const { data: engineer, error: engineerError } = await supabase
-      .from('engineers')
-      .select('id, agency_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (engineerError) {
-      console.error('Error fetching engineer:', engineerError);
-      return null;
-    }
-
-    if (engineer) {
-      return {
-        user_id: user.id,
-        role: 'engineer',
-        agency_id: engineer.agency_id,
-        is_demo_user: false, // Engineers default to non-demo
-        email: user.email,
-        phone: user.phone,
-      };
-    }
-
-    // User exists but has no role assigned
     return null;
   }
 
   return {
     user_id: user.id,
     role: agencyUser.role,
-    agency_id: agencyUser.agency_id,
-    is_demo_user: agencyUser.is_demo_user ?? false, // Default to false if missing
+    agency_id: agencyUser.agencies[0].id,
+    is_demo_user: false, // Default to false if missing
     email: user.email,
     phone: user.phone,
   };

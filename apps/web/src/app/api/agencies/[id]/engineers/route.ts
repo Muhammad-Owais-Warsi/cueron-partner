@@ -22,85 +22,75 @@ import { generateEngineers } from '@/lib/demo-data/generator';
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { searchParams } = new URL(request.url);
+    // const { searchParams } = new URL(request.url);
 
-    // Get query parameters
-    const status = searchParams.get('status');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = (page - 1) * limit;
+    // // Get query parameters
+    // const status = searchParams.get('status');
+    // const page = parseInt(searchParams.get('page') || '1');
+    // const limit = parseInt(searchParams.get('limit') || '20');
+    // const offset = (page - 1) * limit;
 
-    // Get authenticated user session
-    const session = await getUserSession();
+    // // Get authenticated user session
+    // const session = await getUserSession();
 
-    // Check if this is a demo user and serve generated data
-    if (isDemoUser(session)) {
-      try {
-        // Generate demo engineers (generate more than needed for filtering)
-        const allDemoEngineers = generateEngineers(session!.user_id, 50);
+    // // Check if this is a demo user and serve generated data
+    // if (isDemoUser(session)) {
+    //   try {
+    //     // Generate demo engineers (generate more than needed for filtering)
+    //     const allDemoEngineers = generateEngineers(session!.user_id, 50);
 
-        // Apply status filter to demo data if provided
-        let filteredEngineers = allDemoEngineers;
-        if (status) {
-          filteredEngineers = filteredEngineers.filter(
-            (engineer) => engineer.availability_status === status
-          );
-        }
+    //     // Apply status filter to demo data if provided
+    //     let filteredEngineers = allDemoEngineers;
+    //     if (status) {
+    //       filteredEngineers = filteredEngineers.filter(
+    //         (engineer) => engineer.availability_status === status
+    //       );
+    //     }
 
-        // Sort by created_at descending (most recent first)
-        filteredEngineers.sort((a: any, b: any) => {
-          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-          return bTime - aTime;
-        });
+    //     // Sort by created_at descending (most recent first)
+    //     filteredEngineers.sort((a: any, b: any) => {
+    //       const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    //       const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    //       return bTime - aTime;
+    //     });
 
-        // Apply pagination
-        const totalFiltered = filteredEngineers.length;
-        const paginatedEngineers = filteredEngineers.slice(offset, offset + limit);
+    //     // Apply pagination
+    //     const totalFiltered = filteredEngineers.length;
+    //     const paginatedEngineers = filteredEngineers.slice(offset, offset + limit);
 
-        // Build response matching the exact format of real data
-        return NextResponse.json({
-          engineers: paginatedEngineers,
-          pagination: {
-            current_page: page,
-            total_pages: Math.ceil(totalFiltered / limit),
-            total_items: totalFiltered,
-            items_per_page: limit,
-          },
-        });
-      } catch (error) {
-        console.error('Error generating demo engineers data:', error);
-        // Fall through to real data query on error
-      }
-    }
+    //     // Build response matching the exact format of real data
+    //     return NextResponse.json({
+    //       engineers: paginatedEngineers,
+    //       pagination: {
+    //         current_page: page,
+    //         total_pages: Math.ceil(totalFiltered / limit),
+    //         total_items: totalFiltered,
+    //         items_per_page: limit,
+    //       },
+    //     });
+    //   } catch (error) {
+    //     console.error('Error generating demo engineers data:', error);
+    //     // Fall through to real data query on error
+    //   }
+    // }
 
     const supabase = await createClient();
 
     // Build query
-    let query = supabase
+    const {
+      data: engineers,
+      count,
+      error,
+    } = await supabase
       .from('engineers')
       .select('*', { count: 'exact' })
-      // .eq('agency_id', params.id)
+      .eq('agency_id', params.id)
       .order('created_at', { ascending: false });
-
-    // Apply status filter if provided
-    if (status) {
-      query = query.eq('availability_status', status);
-    }
-
-    // Apply pagination
-    const { data: engineers, count, error } = await query.range(offset, offset + limit - 1);
 
     if (error) throw error;
 
     return NextResponse.json({
       engineers,
-      pagination: {
-        current_page: page,
-        total_pages: Math.ceil((count || 0) / limit),
-        total_items: count,
-        items_per_page: limit,
-      },
     });
   } catch (error) {
     console.error('Error fetching engineers:', error);

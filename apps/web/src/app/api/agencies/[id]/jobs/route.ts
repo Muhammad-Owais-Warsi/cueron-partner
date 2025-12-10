@@ -84,6 +84,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Get authenticated user session
     const session = await getUserSession();
+    // console.log('SESSION', session);
 
     if (!session) {
       return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
@@ -103,366 +104,366 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return errorResponse('FORBIDDEN', error.message, undefined, 403);
     }
 
-    // Parse query parameters
-    const { searchParams } = new URL(request.url);
+    // // Parse query parameters
+    // const { searchParams } = new URL(request.url);
 
-    // Status filter
-    const statusParam = searchParams.get('status');
-    const statusFilter: JobStatus[] | null = statusParam
-      ? statusParam.split(',').map((s) => s.trim() as JobStatus)
-      : null;
+    // // Status filter
+    // const statusParam = searchParams.get('status');
+    // const statusFilter: JobStatus[] | null = statusParam
+    //   ? statusParam.split(',').map((s) => s.trim() as JobStatus)
+    //   : null;
 
-    // Urgency filter
-    const urgencyParam = searchParams.get('urgency');
-    const urgencyFilter: JobUrgency[] | null = urgencyParam
-      ? urgencyParam.split(',').map((u) => u.trim() as JobUrgency)
-      : null;
+    // // Urgency filter
+    // const urgencyParam = searchParams.get('urgency');
+    // const urgencyFilter: JobUrgency[] | null = urgencyParam
+    //   ? urgencyParam.split(',').map((u) => u.trim() as JobUrgency)
+    //   : null;
 
-    // Date range filter
-    const dateFrom = searchParams.get('date_from');
-    const dateTo = searchParams.get('date_to');
+    // // Date range filter
+    // const dateFrom = searchParams.get('date_from');
+    // const dateTo = searchParams.get('date_to');
 
-    // Location filter
-    const locationLat = searchParams.get('location_lat');
-    const locationLng = searchParams.get('location_lng');
-    const locationRadiusKm = searchParams.get('location_radius_km');
+    // // Location filter
+    // const locationLat = searchParams.get('location_lat');
+    // const locationLng = searchParams.get('location_lng');
+    // const locationRadiusKm = searchParams.get('location_radius_km');
 
-    // Pagination
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
-    const offset = (page - 1) * limit;
+    // // Pagination
+    // const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    // const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+    // const offset = (page - 1) * limit;
 
-    // Check if this is a demo user and serve generated data
-    if (isDemoUser(session)) {
-      try {
-        // Generate demo jobs (generate more than needed for filtering)
-        const allDemoJobs = generateJobs(session.user_id, 100);
+    // // Check if this is a demo user and serve generated data
+    // if (isDemoUser(session)) {
+    //   try {
+    //     // Generate demo jobs (generate more than needed for filtering)
+    //     const allDemoJobs = generateJobs(session.user_id, 100);
 
-        // Apply filters to demo data
-        let filteredJobs = allDemoJobs;
+    //     // Apply filters to demo data
+    //     let filteredJobs = allDemoJobs;
 
-        // Apply status filter
-        if (statusFilter && statusFilter.length > 0) {
-          filteredJobs = filteredJobs.filter(
-            (job) => job.status && statusFilter.includes(job.status)
-          );
-        }
+    //     // Apply status filter
+    //     if (statusFilter && statusFilter.length > 0) {
+    //       filteredJobs = filteredJobs.filter(
+    //         (job) => job.status && statusFilter.includes(job.status)
+    //       );
+    //     }
 
-        // Apply urgency filter
-        if (urgencyFilter && urgencyFilter.length > 0) {
-          filteredJobs = filteredJobs.filter(
-            (job) => job.urgency && urgencyFilter.includes(job.urgency)
-          );
-        }
+    //     // Apply urgency filter
+    //     if (urgencyFilter && urgencyFilter.length > 0) {
+    //       filteredJobs = filteredJobs.filter(
+    //         (job) => job.urgency && urgencyFilter.includes(job.urgency)
+    //       );
+    //     }
 
-        // Apply date range filter
-        if (dateFrom) {
-          const fromDate = new Date(dateFrom);
-          filteredJobs = filteredJobs.filter(
-            (job) => job.created_at && new Date(job.created_at) >= fromDate
-          );
-        }
-        if (dateTo) {
-          const toDate = new Date(dateTo);
-          filteredJobs = filteredJobs.filter(
-            (job) => job.created_at && new Date(job.created_at) <= toDate
-          );
-        }
+    //     // Apply date range filter
+    //     if (dateFrom) {
+    //       const fromDate = new Date(dateFrom);
+    //       filteredJobs = filteredJobs.filter(
+    //         (job) => job.created_at && new Date(job.created_at) >= fromDate
+    //       );
+    //     }
+    //     if (dateTo) {
+    //       const toDate = new Date(dateTo);
+    //       filteredJobs = filteredJobs.filter(
+    //         (job) => job.created_at && new Date(job.created_at) <= toDate
+    //       );
+    //     }
 
-        // Apply location filter if provided
-        const hasLocationFilter = locationLat && locationLng && locationRadiusKm;
-        if (hasLocationFilter) {
-          const lat = parseFloat(locationLat);
-          const lng = parseFloat(locationLng);
-          const radiusKm = parseFloat(locationRadiusKm);
+    //     // Apply location filter if provided
+    //     const hasLocationFilter = locationLat && locationLng && locationRadiusKm;
+    //     if (hasLocationFilter) {
+    //       const lat = parseFloat(locationLat);
+    //       const lng = parseFloat(locationLng);
+    //       const radiusKm = parseFloat(locationRadiusKm);
 
-          filteredJobs = filteredJobs.filter((job) => {
-            if (!job.site_location?.lat || !job.site_location?.lng) {
-              return false;
-            }
-            const distance = calculateDistance(
-              lat,
-              lng,
-              job.site_location.lat,
-              job.site_location.lng
-            );
-            return distance <= radiusKm;
-          });
-        }
+    //       filteredJobs = filteredJobs.filter((job) => {
+    //         if (!job.site_location?.lat || !job.site_location?.lng) {
+    //           return false;
+    //         }
+    //         const distance = calculateDistance(
+    //           lat,
+    //           lng,
+    //           job.site_location.lat,
+    //           job.site_location.lng
+    //         );
+    //         return distance <= radiusKm;
+    //       });
+    //     }
 
-        // Sort by urgency and scheduled time
-        filteredJobs.sort((a: any, b: any) => {
-          const urgencyDiff =
-            URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
-          if (urgencyDiff !== 0) {
-            return urgencyDiff;
-          }
-          const aTime = a.scheduled_time
-            ? new Date(a.scheduled_time).getTime()
-            : a.created_at
-              ? new Date(a.created_at).getTime()
-              : Infinity;
-          const bTime = b.scheduled_time
-            ? new Date(b.scheduled_time).getTime()
-            : b.created_at
-              ? new Date(b.created_at).getTime()
-              : Infinity;
-          return aTime - bTime;
-        });
+    //     // Sort by urgency and scheduled time
+    //     filteredJobs.sort((a: any, b: any) => {
+    //       const urgencyDiff =
+    //         URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
+    //       if (urgencyDiff !== 0) {
+    //         return urgencyDiff;
+    //       }
+    //       const aTime = a.scheduled_time
+    //         ? new Date(a.scheduled_time).getTime()
+    //         : a.created_at
+    //           ? new Date(a.created_at).getTime()
+    //           : Infinity;
+    //       const bTime = b.scheduled_time
+    //         ? new Date(b.scheduled_time).getTime()
+    //         : b.created_at
+    //           ? new Date(b.created_at).getTime()
+    //           : Infinity;
+    //       return aTime - bTime;
+    //     });
 
-        // Apply pagination
-        const totalFiltered = filteredJobs.length;
-        const paginatedJobs = filteredJobs.slice(offset, offset + limit);
+    //     // Apply pagination
+    //     const totalFiltered = filteredJobs.length;
+    //     const paginatedJobs = filteredJobs.slice(offset, offset + limit);
 
-        // Build response matching the exact format of real data
-        const response = {
-          jobs: paginatedJobs,
-          pagination: {
-            page,
-            limit,
-            total: totalFiltered,
-            total_pages: Math.ceil(totalFiltered / limit),
-            has_next: page < Math.ceil(totalFiltered / limit),
-            has_prev: page > 1,
-          },
-          filters_applied: {
-            status: statusFilter,
-            urgency: urgencyFilter,
-            date_from: dateFrom,
-            date_to: dateTo,
-            location: hasLocationFilter
-              ? {
-                  lat: parseFloat(locationLat!),
-                  lng: parseFloat(locationLng!),
-                  radius_km: parseFloat(locationRadiusKm!),
-                }
-              : null,
-          },
-        };
+    //     // Build response matching the exact format of real data
+    //     const response = {
+    //       jobs: paginatedJobs,
+    //       pagination: {
+    //         page,
+    //         limit,
+    //         total: totalFiltered,
+    //         total_pages: Math.ceil(totalFiltered / limit),
+    //         has_next: page < Math.ceil(totalFiltered / limit),
+    //         has_prev: page > 1,
+    //       },
+    //       filters_applied: {
+    //         status: statusFilter,
+    //         urgency: urgencyFilter,
+    //         date_from: dateFrom,
+    //         date_to: dateTo,
+    //         location: hasLocationFilter
+    //           ? {
+    //               lat: parseFloat(locationLat!),
+    //               lng: parseFloat(locationLng!),
+    //               radius_km: parseFloat(locationRadiusKm!),
+    //             }
+    //           : null,
+    //       },
+    //     };
 
-        return successResponse(response);
-      } catch (error) {
-        console.error('Error generating demo jobs data:', error);
-        // Fall through to real data query on error
-      }
-    }
+    //     return successResponse(response);
+    //   } catch (error) {
+    //     console.error('Error generating demo jobs data:', error);
+    //     // Fall through to real data query on error
+    //   }
+    // }
 
-    // Validate filters
-    const validStatuses: JobStatus[] = [
-      'pending',
-      'assigned',
-      'accepted',
-      'travelling',
-      'onsite',
-      'completed',
-      'cancelled',
-    ];
-    const validUrgencies: JobUrgency[] = ['emergency', 'urgent', 'normal', 'scheduled'];
+    // // Validate filters
+    // const validStatuses: JobStatus[] = [
+    //   'pending',
+    //   'assigned',
+    //   'accepted',
+    //   'travelling',
+    //   'onsite',
+    //   'completed',
+    //   'cancelled',
+    // ];
+    // const validUrgencies: JobUrgency[] = ['emergency', 'urgent', 'normal', 'scheduled'];
 
-    if (statusFilter) {
-      const invalidStatuses = statusFilter.filter((s) => !validStatuses.includes(s));
-      if (invalidStatuses.length > 0) {
-        return errorResponse(
-          'INVALID_FILTER',
-          `Invalid status values: ${invalidStatuses.join(', ')}`,
-          { status: [`Valid values are: ${validStatuses.join(', ')}`] },
-          400
-        );
-      }
-    }
+    // if (statusFilter) {
+    //   const invalidStatuses = statusFilter.filter((s) => !validStatuses.includes(s));
+    //   if (invalidStatuses.length > 0) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       `Invalid status values: ${invalidStatuses.join(', ')}`,
+    //       { status: [`Valid values are: ${validStatuses.join(', ')}`] },
+    //       400
+    //     );
+    //   }
+    // }
 
-    if (urgencyFilter) {
-      const invalidUrgencies = urgencyFilter.filter((u) => !validUrgencies.includes(u));
-      if (invalidUrgencies.length > 0) {
-        return errorResponse(
-          'INVALID_FILTER',
-          `Invalid urgency values: ${invalidUrgencies.join(', ')}`,
-          { urgency: [`Valid values are: ${validUrgencies.join(', ')}`] },
-          400
-        );
-      }
-    }
+    // if (urgencyFilter) {
+    //   const invalidUrgencies = urgencyFilter.filter((u) => !validUrgencies.includes(u));
+    //   if (invalidUrgencies.length > 0) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       `Invalid urgency values: ${invalidUrgencies.join(', ')}`,
+    //       { urgency: [`Valid values are: ${validUrgencies.join(', ')}`] },
+    //       400
+    //     );
+    //   }
+    // }
 
-    // Validate date range
-    if (dateFrom && isNaN(Date.parse(dateFrom))) {
-      return errorResponse(
-        'INVALID_FILTER',
-        'Invalid date_from format. Use ISO 8601 format',
-        { date_from: ['Must be a valid ISO 8601 date string'] },
-        400
-      );
-    }
+    // // Validate date range
+    // if (dateFrom && isNaN(Date.parse(dateFrom))) {
+    //   return errorResponse(
+    //     'INVALID_FILTER',
+    //     'Invalid date_from format. Use ISO 8601 format',
+    //     { date_from: ['Must be a valid ISO 8601 date string'] },
+    //     400
+    //   );
+    // }
 
-    if (dateTo && isNaN(Date.parse(dateTo))) {
-      return errorResponse(
-        'INVALID_FILTER',
-        'Invalid date_to format. Use ISO 8601 format',
-        { date_to: ['Must be a valid ISO 8601 date string'] },
-        400
-      );
-    }
+    // if (dateTo && isNaN(Date.parse(dateTo))) {
+    //   return errorResponse(
+    //     'INVALID_FILTER',
+    //     'Invalid date_to format. Use ISO 8601 format',
+    //     { date_to: ['Must be a valid ISO 8601 date string'] },
+    //     400
+    //   );
+    // }
 
-    // Validate location filter
-    const hasLocationFilter = locationLat && locationLng && locationRadiusKm;
-    if (hasLocationFilter) {
-      const lat = parseFloat(locationLat);
-      const lng = parseFloat(locationLng);
-      const radius = parseFloat(locationRadiusKm);
+    // // Validate location filter
+    // const hasLocationFilter = locationLat && locationLng && locationRadiusKm;
+    // if (hasLocationFilter) {
+    //   const lat = parseFloat(locationLat);
+    //   const lng = parseFloat(locationLng);
+    //   const radius = parseFloat(locationRadiusKm);
 
-      if (isNaN(lat) || lat < -90 || lat > 90) {
-        return errorResponse(
-          'INVALID_FILTER',
-          'Invalid location_lat. Must be between -90 and 90',
-          { location_lat: ['Must be a valid latitude between -90 and 90'] },
-          400
-        );
-      }
+    //   if (isNaN(lat) || lat < -90 || lat > 90) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       'Invalid location_lat. Must be between -90 and 90',
+    //       { location_lat: ['Must be a valid latitude between -90 and 90'] },
+    //       400
+    //     );
+    //   }
 
-      if (isNaN(lng) || lng < -180 || lng > 180) {
-        return errorResponse(
-          'INVALID_FILTER',
-          'Invalid location_lng. Must be between -180 and 180',
-          { location_lng: ['Must be a valid longitude between -180 and 180'] },
-          400
-        );
-      }
+    //   if (isNaN(lng) || lng < -180 || lng > 180) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       'Invalid location_lng. Must be between -180 and 180',
+    //       { location_lng: ['Must be a valid longitude between -180 and 180'] },
+    //       400
+    //     );
+    //   }
 
-      if (isNaN(radius) || radius <= 0) {
-        return errorResponse(
-          'INVALID_FILTER',
-          'Invalid location_radius_km. Must be a positive number',
-          { location_radius_km: ['Must be a positive number'] },
-          400
-        );
-      }
-    }
+    //   if (isNaN(radius) || radius <= 0) {
+    //     return errorResponse(
+    //       'INVALID_FILTER',
+    //       'Invalid location_radius_km. Must be a positive number',
+    //       { location_radius_km: ['Must be a positive number'] },
+    //       400
+    //     );
+    //   }
+    // }
 
     // Create Supabase client
     const supabase = await createClient();
 
     // Build query with filters
-    let query = supabase
+    const { data: jobs, error: fetchError } = await supabase
       .from('jobs')
       .select('*', { count: 'exact' })
       .eq('assigned_agency_id', agencyId);
 
-    // Apply status filter (Property 83: Status filter accuracy)
-    if (statusFilter && statusFilter.length > 0) {
-      query = query.in('status', statusFilter);
-    }
+    console.log(jobs);
 
-    // Apply urgency filter
-    if (urgencyFilter && urgencyFilter.length > 0) {
-      query = query.in('urgency', urgencyFilter);
-    }
+    // // Apply status filter (Property 83: Status filter accuracy)
+    // if (statusFilter && statusFilter.length > 0) {
+    //   query = query.in('status', statusFilter);
+    // }
 
-    // Apply date range filter (Property 84: Date range filter accuracy)
-    if (dateFrom) {
-      query = query.gte('scheduled_time', dateFrom);
-    }
-    if (dateTo) {
-      query = query.lte('scheduled_time', dateTo);
-    }
+    // // Apply urgency filter
+    // if (urgencyFilter && urgencyFilter.length > 0) {
+    //   query = query.in('urgency', urgencyFilter);
+    // }
+
+    // // Apply date range filter (Property 84: Date range filter accuracy)
+    // if (dateFrom) {
+    //   query = query.gte('scheduled_time', dateFrom);
+    // }
+    // if (dateTo) {
+    //   query = query.lte('scheduled_time', dateTo);
+    // }
 
     // Execute query to get jobs
-    const { data: jobs, error: fetchError } = await query;
-    console.log(jobs);
 
     if (fetchError) {
       console.error('Error fetching jobs:', fetchError);
       return errorResponse('DATABASE_ERROR', 'Failed to fetch jobs', undefined, 500);
     }
 
-    let filteredJobs = jobs || [];
+    // let filteredJobs = jobs || [];
 
-    // Apply spatial filter using PostGIS (Property 85: Spatial filter accuracy)
-    if (hasLocationFilter && filteredJobs.length > 0) {
-      const lat = parseFloat(locationLat!);
-      const lng = parseFloat(locationLng!);
-      const radiusMeters = parseFloat(locationRadiusKm!) * 1000;
+    // // Apply spatial filter using PostGIS (Property 85: Spatial filter accuracy)
+    // if (hasLocationFilter && filteredJobs.length > 0) {
+    //   const lat = parseFloat(locationLat!);
+    //   const lng = parseFloat(locationLng!);
+    //   const radiusMeters = parseFloat(locationRadiusKm!) * 1000;
 
-      // Use PostGIS ST_DWithin for spatial filtering
-      const { data: spatialJobs, error: spatialError } = await supabase.rpc(
-        'filter_jobs_by_location',
-        {
-          p_agency_id: agencyId,
-          p_lat: lat,
-          p_lng: lng,
-          p_radius_meters: radiusMeters,
-          p_job_ids: filteredJobs.map((j) => j.id),
-        }
-      );
+    //   // Use PostGIS ST_DWithin for spatial filtering
+    //   const { data: spatialJobs, error: spatialError } = await supabase.rpc(
+    //     'filter_jobs_by_location',
+    //     {
+    //       p_agency_id: agencyId,
+    //       p_lat: lat,
+    //       p_lng: lng,
+    //       p_radius_meters: radiusMeters,
+    //       p_job_ids: filteredJobs.map((j) => j.id),
+    //     }
+    //   );
 
-      if (spatialError) {
-        console.error('Error applying spatial filter:', spatialError);
-        // If RPC doesn't exist, fall back to client-side filtering
-        // This is a simplified Haversine distance calculation
-        filteredJobs = filteredJobs.filter((job) => {
-          if (!job.site_location?.lat || !job.site_location?.lng) {
-            return false;
-          }
-          const distance = calculateDistance(
-            lat,
-            lng,
-            job.site_location.lat,
-            job.site_location.lng
-          );
-          return distance <= parseFloat(locationRadiusKm!);
-        });
-      } else {
-        // Use spatially filtered results
-        const spatialJobIds = new Set(spatialJobs.map((j: any) => j.id));
-        filteredJobs = filteredJobs.filter((j) => spatialJobIds.has(j.id));
-      }
-    }
+    //   if (spatialError) {
+    //     console.error('Error applying spatial filter:', spatialError);
+    //     // If RPC doesn't exist, fall back to client-side filtering
+    //     // This is a simplified Haversine distance calculation
+    //     filteredJobs = filteredJobs.filter((job) => {
+    //       if (!job.site_location?.lat || !job.site_location?.lng) {
+    //         return false;
+    //       }
+    //       const distance = calculateDistance(
+    //         lat,
+    //         lng,
+    //         job.site_location.lat,
+    //         job.site_location.lng
+    //       );
+    //       return distance <= parseFloat(locationRadiusKm!);
+    //     });
+    //   } else {
+    //     // Use spatially filtered results
+    //     const spatialJobIds = new Set(spatialJobs.map((j: any) => j.id));
+    //     filteredJobs = filteredJobs.filter((j) => spatialJobIds.has(j.id));
+    //   }
+    // }
 
-    // Sort by urgency and scheduled time (Property 13: Job list sorting)
-    // Requirements 3.3: Jobs sorted by urgency and scheduled time
-    filteredJobs.sort((a: any, b: any) => {
-      // First, sort by urgency priority
-      const urgencyDiff =
-        URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
-      if (urgencyDiff !== 0) {
-        return urgencyDiff;
-      }
+    // // Sort by urgency and scheduled time (Property 13: Job list sorting)
+    // // Requirements 3.3: Jobs sorted by urgency and scheduled time
+    // filteredJobs.sort((a: any, b: any) => {
+    //   // First, sort by urgency priority
+    //   const urgencyDiff =
+    //     URGENCY_PRIORITY[a.urgency as JobUrgency] - URGENCY_PRIORITY[b.urgency as JobUrgency];
+    //   if (urgencyDiff !== 0) {
+    //     return urgencyDiff;
+    //   }
 
-      // Then sort by scheduled time (earlier first)
-      const aTime = a.scheduled_time ? new Date(a.scheduled_time).getTime() : Infinity;
-      const bTime = b.scheduled_time ? new Date(b.scheduled_time).getTime() : Infinity;
-      return aTime - bTime;
-    });
+    //   // Then sort by scheduled time (earlier first)
+    //   const aTime = a.scheduled_time ? new Date(a.scheduled_time).getTime() : Infinity;
+    //   const bTime = b.scheduled_time ? new Date(b.scheduled_time).getTime() : Infinity;
+    //   return aTime - bTime;
+    // });
 
-    // Apply pagination
-    const totalFiltered = filteredJobs.length;
-    const paginatedJobs = filteredJobs.slice(offset, offset + limit);
+    // // Apply pagination
+    // const totalFiltered = filteredJobs.length;
+    // const paginatedJobs = filteredJobs.slice(offset, offset + limit);
 
-    // Build response
-    const response = {
-      jobs: paginatedJobs,
-      pagination: {
-        page,
-        limit,
-        total: totalFiltered,
-        total_pages: Math.ceil(totalFiltered / limit),
-        has_next: page < Math.ceil(totalFiltered / limit),
-        has_prev: page > 1,
-      },
-      filters_applied: {
-        status: statusFilter,
-        urgency: urgencyFilter,
-        date_from: dateFrom,
-        date_to: dateTo,
-        location: hasLocationFilter
-          ? {
-              lat: parseFloat(locationLat!),
-              lng: parseFloat(locationLng!),
-              radius_km: parseFloat(locationRadiusKm!),
-            }
-          : null,
-      },
-    };
+    // // Build response
+    // const response = {
+    //   jobs: paginatedJobs,
+    //   pagination: {
+    //     page,
+    //     limit,
+    //     total: totalFiltered,
+    //     total_pages: Math.ceil(totalFiltered / limit),
+    //     has_next: page < Math.ceil(totalFiltered / limit),
+    //     has_prev: page > 1,
+    //   },
+    //   filters_applied: {
+    //     status: statusFilter,
+    //     urgency: urgencyFilter,
+    //     date_from: dateFrom,
+    //     date_to: dateTo,
+    //     location: hasLocationFilter
+    //       ? {
+    //           lat: parseFloat(locationLat!),
+    //           lng: parseFloat(locationLng!),
+    //           radius_km: parseFloat(locationRadiusKm!),
+    //         }
+    //       : null,
+    //   },
+    // };
 
-    return successResponse(response);
+    return successResponse(jobs);
   } catch (error) {
     console.error('Unexpected error in GET /api/agencies/[id]/jobs:', error);
     return errorResponse('INTERNAL_ERROR', 'An unexpected error occurred', undefined, 500);
