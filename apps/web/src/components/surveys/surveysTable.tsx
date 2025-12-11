@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useUserProfile } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 import {
@@ -56,6 +55,7 @@ interface SurveysListViewProps {
 export type Survey = {
   id: string;
   agency_id: string;
+  engineer_id: string;
   job_number: string;
   description: string;
   equipments_required: string[];
@@ -96,6 +96,20 @@ export function SurveysListView({ agencyId: propAgencyId }: SurveysListViewProps
           </Button>
         ),
         cell: ({ row }) => <span className="font-medium">{row.original.job_number}</span>,
+      },
+      {
+        accessorKey: 'engineer_id',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-medium"
+          >
+            Engineer ID
+            <ArrowUpDown className="ml-1 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => <span className="font-medium">{row.original.engineer_id}</span>,
       },
       {
         accessorKey: 'description',
@@ -279,7 +293,7 @@ export function SurveysListView({ agencyId: propAgencyId }: SurveysListViewProps
                 <SheetTitle className="flex items-center space-x-2">
                   <FileText className="h-5 w-5" />
                   <div>
-                    <h2 className="text-lg font-semibold">Survey #{selectedSurvey.job_id}</h2>
+                    <h2 className="text-lg font-semibold">Survey #{selectedSurvey.job_number}</h2>
                     <p className="text-muted-foreground text-sm">Survey Details</p>
                   </div>
                 </SheetTitle>
@@ -294,7 +308,10 @@ export function SurveysListView({ agencyId: propAgencyId }: SurveysListViewProps
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="font-medium">Job ID:</span> {selectedSurvey.job_id}
+                      <span className="font-medium">Job ID:</span> {selectedSurvey.job_number}
+                    </div>
+                    <div>
+                      <span className="font-medium">Engineer ID:</span> {selectedSurvey.engineer_id}
                     </div>
                     <div>
                       <span className="font-medium">Amount:</span>{' '}

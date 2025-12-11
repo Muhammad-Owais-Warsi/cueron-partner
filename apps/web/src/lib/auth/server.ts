@@ -77,77 +77,98 @@ export interface UserSession {
  * Get user session with role and agency information
  * Server-side function for authorization checks
  */
-export async function getUserSession(): Promise<UserSession | null> {
-  const supabase = createServerClient();
 
-  // Get authenticated user
+export async function getUserSession(): Promise<UserSession | null> {
+  const supabase = await createServerClient();
+
+  // 1. Get authenticated user
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
-  // console.log('SEVER', user);
+  console.log('SERVER USER:', user);
 
-  if (userError || !user) {
-    return null;
-  }
+  if (userError || !user) return null;
 
-  // Get user role, agency, and demo flag from agency_users table
-  const { data: agencyUser, error: roleError } = await supabase
+  // 2. Fetch user role from `users` table
+  const { data: userRecord, error: roleErr } = await supabase
     .from('users')
-    .select(
-      `role, agencies (
-      id
-      )`
-    )
-    .eq('email', user.email)
+    .select('role')
+    .eq('id', user.id)
     .single();
 
-  // console.log('AGENCY_USER', agencyUser);
-
-  if (roleError) {
-    console.error('Error fetching user role:', roleError);
+  if (roleErr || !userRecord) {
+    console.error('Error fetching user role:', roleErr);
     return null;
   }
 
-  // // If no agency_users record, check if user is an engineer
-  // if (!agencyUser) {
-  //   const { data: engineer, error: engineerError } = await supabase
-  //     .from('engineers')
-  //     .select('id, agency_id')
-  //     .eq('user_id', user.id)
-  //     .maybeSingle();
+  const role = userRecord.role as 'admin' | 'manager' | 'engineer';
 
-  //   if (engineerError) {
-  //     console.error('Error fetching engineer:', engineerError);
-  //     return null;
-  //   }
-
-  //   if (engineer) {
-  //     return {
-  //       user_id: user.id,
-  //       role: 'engineer',
-  //       agency_id: engineer.agency_id,
-  //       is_demo_user: false, // Engineers default to non-demo
-  //       email: user.email,
-  //       phone: user.phone,
-  //     };
-  //   }
-
-  //   // User exists but has no role assigned
-  //   return null;
-  // }
-
-  if (!agencyUser) {
-    return null;
+  // ----------------------------
+  // ⭐ ROLE: ADMIN
+  // ----------------------------
+  if (role === 'admin') {
+    return {
+      user_id: user.id,
+      email: user.email,
+      role: 'admin',
+      is_demo_user: false,
+      phone: user.phone,
+    };
   }
 
-  return {
-    user_id: user.id,
-    role: agencyUser.role,
-    agency_id: agencyUser.agencies[0].id,
-    is_demo_user: false, // Default to false if missing
-    email: user.email,
-    phone: user.phone,
-  };
+  // ----------------------------
+  // ⭐ ROLE: MANAGER → lookup agency
+  // ----------------------------
+  if (role === 'manager') {
+    const { data: agency, error: agencyErr } = await supabase
+      .from('agencies')
+      .select('id')
+      .eq('email', user.email)
+      .single();
+
+    if (agencyErr || !agency) {
+      console.error("Error fetching manager's agency:", agencyErr);
+      return null;
+    }
+
+    return {
+      user_id: user.id,
+      email: user.email,
+      role: 'manager',
+      agency_id: agency.id,
+      is_demo_user: false,
+      phone: user.phone,
+    };
+  }
+
+  // ----------------------------
+  // ⭐ ROLE: ENGINEER → lookup engineer record
+  // ----------------------------
+  if (role === 'engineer') {
+    const { data: engineer, error: engErr } = await supabase
+      .from('engineers')
+      .select('id, agency_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (engErr || !engineer) {
+      console.error('Error fetching engineer profile:', engErr);
+      return null;
+    }
+
+    return {
+      user_id: user.id,
+      email: user.email,
+      role: 'engineer',
+      engineer_id: engineer.id,
+      agency_id: engineer.agency_id,
+      is_demo_user: false,
+      phone: user.phone,
+    };
+  }
+
+  // Should never reach here
+  return null;
 }

@@ -10,6 +10,7 @@ import {
   CreditCard,
   Settings,
   Binoculars,
+  Plus,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/sidebar/nav-main';
@@ -64,6 +65,12 @@ const data = {
       url: '/dashboard/payments',
       icon: CreditCard,
       roles: ['manager', 'engineer'],
+    },
+    {
+      title: 'Submit Survey',
+      url: '/dashboard/surveys/create',
+      icon: Plus,
+      roles: ['admin', 'engineer'],
     },
     {
       title: 'Surveys',
