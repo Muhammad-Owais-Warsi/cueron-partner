@@ -9,6 +9,7 @@ import {
   BarChart3,
   CreditCard,
   Settings,
+  Binoculars,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/sidebar/nav-main';
@@ -64,12 +65,12 @@ const data = {
       icon: CreditCard,
       roles: ['manager', 'engineer'],
     },
-    // {
-    //   title: 'Settings',
-    //   url: '/dashboard/settings',
-    //   icon: Settings,
-    //   roles: ['admin', 'manager'],
-    // },
+    {
+      title: 'Surveys',
+      url: '/dashboard/surveys',
+      icon: Binoculars,
+      roles: ['admin', 'manager'],
+    },
   ],
 };
 
