@@ -87,8 +87,6 @@ export async function getUserSession(): Promise<UserSession | null> {
     error: userError,
   } = await supabase.auth.getUser();
 
-  console.log('SERVER USER:', user);
-
   if (userError || !user) return null;
 
   // 2. Fetch user role from `users` table
@@ -105,9 +103,6 @@ export async function getUserSession(): Promise<UserSession | null> {
 
   const role = userRecord.role as 'admin' | 'manager' | 'engineer';
 
-  // ----------------------------
-  // ⭐ ROLE: ADMIN
-  // ----------------------------
   if (role === 'admin') {
     return {
       user_id: user.id,
@@ -118,9 +113,6 @@ export async function getUserSession(): Promise<UserSession | null> {
     };
   }
 
-  // ----------------------------
-  // ⭐ ROLE: MANAGER → lookup agency
-  // ----------------------------
   if (role === 'manager') {
     const { data: agency, error: agencyErr } = await supabase
       .from('agencies')
@@ -143,9 +135,6 @@ export async function getUserSession(): Promise<UserSession | null> {
     };
   }
 
-  // ----------------------------
-  // ⭐ ROLE: ENGINEER → lookup engineer record
-  // ----------------------------
   if (role === 'engineer') {
     const { data: engineer, error: engErr } = await supabase
       .from('engineers')

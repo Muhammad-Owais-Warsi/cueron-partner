@@ -15,8 +15,6 @@ export async function POST(
 
     const { engineer_id, job_number, description, equipments_required, amount, photos } = body;
 
-    console.log('BODY', body);
-    // --- Basic validation ---
     if (!engineer_id || !job_number || !description || !equipments_required) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
