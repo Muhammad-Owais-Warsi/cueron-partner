@@ -342,9 +342,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createClient();
 
     // Build query with filters
-    const { data: jobs, error: fetchError } = await supabase
+    const { data: jobs, error } = await supabase
       .from('jobs')
-      .select('*', { count: 'exact' })
+      .select(
+        `
+        *,
+        engineers:assigned_engineer_id (
+          user_id,
+          name,
+          email,
+          phone
+        )
+      `
+      )
       .eq('assigned_agency_id', agencyId);
 
     console.log(jobs);
@@ -369,8 +379,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Execute query to get jobs
 
-    if (fetchError) {
-      console.error('Error fetching jobs:', fetchError);
+    if (error) {
+      console.error('Error fetching jobs:', error);
       return errorResponse('DATABASE_ERROR', 'Failed to fetch jobs', undefined, 500);
     }
 
