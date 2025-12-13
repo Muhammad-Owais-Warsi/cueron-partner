@@ -1,20 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 
-// ticket-form-config.ts
-
-export const TICKET_FORM_FIELDS = [
+export const INSPECTION_FORM_FIELDS = [
   {
     section: 'Company Details',
     fields: [
@@ -34,7 +31,13 @@ export const TICKET_FORM_FIELDS = [
       { name: 'brand_name', label: 'Brand Name', type: 'text', required: true },
       {
         name: 'years_of_operation_in_equipment',
-        label: 'Years of Operation',
+        label: 'Years of Operation (Equipment)',
+        type: 'number',
+        required: false,
+      },
+      {
+        name: 'years_of_operations',
+        label: 'Years of Operations (Company)',
         type: 'number',
         required: false,
       },
@@ -57,13 +60,19 @@ export const TICKET_FORM_FIELDS = [
     ],
   },
   {
-    section: 'Problem Details',
+    section: 'Inspection Details',
     fields: [
       {
         name: 'problem_statement',
         label: 'Problem Statement',
         type: 'textarea',
         required: true,
+      },
+      {
+        name: 'possible_solution',
+        label: 'Possible Solution',
+        type: 'textarea',
+        required: false,
       },
       {
         name: 'specification_plate_photo',
@@ -75,16 +84,15 @@ export const TICKET_FORM_FIELDS = [
   },
 ];
 
-export default function CreateTicketForm() {
-  const [loading, setLoading] = useState(false);
-
+export default function CreateInspectionForm() {
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (key: string, value: any) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const isValid = TICKET_FORM_FIELDS.every((section) =>
+  const isValid = INSPECTION_FORM_FIELDS.every((section) =>
     section.fields.filter((f) => f.required).every((f) => formData[f.name])
   );
 
@@ -92,7 +100,7 @@ export default function CreateTicketForm() {
     try {
       setLoading(true);
 
-      const res = await fetch('/api/new/tickets/create', {
+      const res = await fetch('/api/new/inspection/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -100,10 +108,10 @@ export default function CreateTicketForm() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Failed to create ticket');
+        throw new Error(err.message || 'Failed to create inspection');
       }
 
-      toast.success('Ticket created successfully');
+      toast.success('Inspection created successfully');
       setFormData({});
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
@@ -118,7 +126,7 @@ export default function CreateTicketForm() {
     if (field.type === 'textarea') {
       return (
         <div key={field.name} className="space-y-2">
-          <Label>
+          <Label className="text-foreground">
             {field.label} {field.required && <span className="text-red-500">*</span>}
           </Label>
           <Textarea value={value} onChange={(e) => handleChange(field.name, e.target.value)} />
@@ -128,7 +136,7 @@ export default function CreateTicketForm() {
 
     return (
       <div key={field.name} className="space-y-2">
-        <Label>
+        <Label className="text-foreground">
           {field.label} {field.required && <span className="text-red-500">*</span>}
         </Label>
         <Input
@@ -148,34 +156,30 @@ export default function CreateTicketForm() {
   return (
     <div className="w-full px-6 py-8">
       <Card className="max-w-6xl">
-        <CardHeader className="flex flex-row items-center gap-4  border-b">
+        <CardHeader className="flex flex-row items-center gap-4 border-b">
           <div className="p-2 rounded-lg bg-muted">
-            <FileText className="w-5 h-5 text-foreground" />
+            <ClipboardCheck className="w-5 h-5 text-foreground" />
           </div>
           <div>
-            <CardTitle className="text-xl">Create Ticket</CardTitle>
-            <CardDescription>Fill in the details to raise a new inspection ticket</CardDescription>
+            <CardTitle>Create Inspection</CardTitle>
+            <CardDescription>Fill inspection details after site visit</CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-8 pt-6">
-          {TICKET_FORM_FIELDS.map((section) => (
-            <div key={section.section} className="rounded-lg bg-card p-5 space-y-4">
-              {/* Section heading */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-foreground">{section.section}</h3>
-              </div>
+          {INSPECTION_FORM_FIELDS.map((section) => (
+            <div key={section.section} className=" bg-card p-5 space-y-4">
+              <h3 className="font-semibold text-foreground">{section.section}</h3>
 
-              {/* Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {section.fields.map(renderField)}
               </div>
             </div>
           ))}
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end">
             <Button onClick={submit} disabled={!isValid || loading}>
-              {loading ? <Spinner /> : 'Create Ticket'}
+              {loading ? <Spinner /> : 'Create Inspection'}
             </Button>
           </div>
         </CardContent>
