@@ -1,4 +1,4 @@
-import CreateTicketForm from '@/components/ticket-form';
+import CreateTicketForm from '@/components/tickets/ticket-form';
 export default function Page() {
   return (
     <div>
