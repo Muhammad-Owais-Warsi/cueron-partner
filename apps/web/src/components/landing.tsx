@@ -54,7 +54,7 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" className="w-full sm:w-auto">
-              <Link href="/login">Get Started</Link>
+              <Link href="/engineer">Become an Engineer</Link>
             </Button>
             <Button variant="outline" size="lg" className="w-full sm:w-auto">
               <Link href="/register">Create Agency</Link>

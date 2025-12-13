@@ -196,8 +196,9 @@ export function useUserProfile() {
             setProfile({
               user_id: user.id,
               name:
-                user.raw_user_metadata.firstName + user.raw_user_metadata.lastName ||
-                user.user_metadata.firstName + user.user_metadata.lastName,
+                user?.raw_user_metadata?.firstName + user?.raw_user_metadata?.lastName ||
+                user?.user_metadata?.firstName + user?.user_metadata?.lastName ||
+                'ADMIN',
               email: user?.email,
               role: 'admin',
               is_demo_user: false,

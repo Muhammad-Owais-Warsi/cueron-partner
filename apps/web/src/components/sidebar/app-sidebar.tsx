@@ -8,7 +8,6 @@ import {
   Users,
   BarChart3,
   CreditCard,
-  Settings,
   Binoculars,
   Plus,
 } from 'lucide-react';
@@ -30,7 +29,58 @@ import ThemeToggle from '../theme/theme-toggle';
 import { Spinner } from '../ui/spinner';
 
 // maybe for admin we create a complete new route, coz the fetching of data will be completely different
-const data = {
+// const data = {
+//   user: {
+//     name: 'shadcn',
+//     email: 'm@example.com',
+//     avatar: '/avatars/shadcn.jpg',
+//   },
+//   navMain: [
+//     {
+//       title: 'Dashboard',
+//       url: '/dashboard',
+//       icon: Home,
+//     },
+//     {
+//       title: 'Jobs',
+//       url: '/dashboard/jobs',
+//       icon: Briefcase,
+//       roles: ['manager', 'engineer'],
+//     },
+//     {
+//       title: 'Team',
+//       url: '/dashboard/team',
+//       icon: Users,
+//       roles: ['manager'],
+//     },
+//     {
+//       title: 'Analytics',
+//       url: '/dashboard/analytics',
+//       icon: BarChart3,
+//       roles: ['manager'],
+//     },
+//     {
+//       title: 'Payments',
+//       url: '/dashboard/payments',
+//       icon: CreditCard,
+//       roles: ['manager', 'engineer'],
+//     },
+//     {
+//       title: 'Submit Survey',
+//       url: '/dashboard/surveys/create',
+//       icon: Plus,
+//       roles: ['admin', 'engineer'],
+//     },
+//     {
+//       title: 'Surveys',
+//       url: '/dashboard/surveys',
+//       icon: Binoculars,
+//       roles: ['admin', 'manager'],
+//     },
+//   ],
+// };
+
+const new_data = {
   user: {
     name: 'shadcn',
     email: 'm@example.com',
@@ -46,7 +96,7 @@ const data = {
       title: 'Jobs',
       url: '/dashboard/jobs',
       icon: Briefcase,
-      roles: ['manager', 'engineer'],
+      roles: ['admin', 'manager', 'engineer'],
     },
     {
       title: 'Team',
@@ -55,29 +105,53 @@ const data = {
       roles: ['manager'],
     },
     {
-      title: 'Analytics',
-      url: '/dashboard/analytics',
-      icon: BarChart3,
-      roles: ['manager'],
+      title: 'Create Ticket',
+      url: '/dashboard/tickets/create',
+      icon: Users,
+      roles: ['admin', 'manager', 'engineer'],
     },
     {
-      title: 'Payments',
-      url: '/dashboard/payments',
-      icon: CreditCard,
-      roles: ['manager', 'engineer'],
+      title: 'Tickets',
+      url: '/dashboard/tickets',
+      icon: Users,
+      roles: ['admin'],
     },
     {
-      title: 'Submit Survey',
-      url: '/dashboard/surveys/create',
-      icon: Plus,
-      roles: ['admin', 'engineer'],
+      title: 'Submit Inspection',
+      url: '/dashboard/inspection/create',
+      icon: Users,
+      roles: ['admin'],
     },
     {
-      title: 'Surveys',
-      url: '/dashboard/surveys',
-      icon: Binoculars,
-      roles: ['admin', 'manager'],
+      title: 'Inspections',
+      url: '/dashboard/inspection',
+      icon: Users,
+      roles: ['admin'],
     },
+    // {
+    //   title: 'Analytics',
+    //   url: '/dashboard/analytics',
+    //   icon: BarChart3,
+    //   roles: ['manager'],
+    // },
+    // {
+    //   title: 'Payments',
+    //   url: '/dashboard/payments',
+    //   icon: CreditCard,
+    //   roles: ['manager', 'engineer'],
+    // },
+    // {
+    //   title: 'Submit Survey',
+    //   url: '/dashboard/surveys/create',
+    //   icon: Plus,
+    //   roles: ['admin', 'engineer'],
+    // },
+    // {
+    //   title: 'Surveys',
+    //   url: '/dashboard/surveys',
+    //   icon: Binoculars,
+    //   roles: ['admin', 'manager'],
+    // },
   ],
 };
 
@@ -91,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const userRole = profile?.role ?? 'engineer';
 
   // ⭐ Filter nav items based on allowed roles
-  const filteredNav = data.navMain.filter((item) => {
+  const filteredNav = new_data.navMain.filter((item) => {
     if (!item.roles) return true; // public items
     return item.roles.includes(userRole);
   });
