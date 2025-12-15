@@ -105,6 +105,12 @@ const new_data = {
       roles: ['admin'],
     },
     {
+      title: 'Bids',
+      url: '/dashboard/bids',
+      icon: Briefcase,
+      roles: ['admin'],
+    },
+    {
       title: 'Team',
       url: '/dashboard/team',
       icon: Users,
