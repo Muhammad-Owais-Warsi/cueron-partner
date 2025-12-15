@@ -94,9 +94,15 @@ const new_data = {
     },
     {
       title: 'Jobs',
-      url: '/dashboard/jobs',
+      url: '/dashboard/new_jobs',
       icon: Briefcase,
       roles: ['admin', 'manager', 'engineer'],
+    },
+    {
+      title: 'Create Jobs',
+      url: '/dashboard/new_jobs/create',
+      icon: Briefcase,
+      roles: ['admin'],
     },
     {
       title: 'Team',
