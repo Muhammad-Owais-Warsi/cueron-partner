@@ -12,6 +12,8 @@ import {
   Plus,
 } from 'lucide-react';
 
+import { PlusCircle, Gavel, Ticket, ClipboardCheck, ClipboardList } from 'lucide-react';
+
 import { NavMain } from '@/components/sidebar/nav-main';
 
 import { NavUser } from '@/components/sidebar/nav-user';
@@ -99,15 +101,15 @@ const new_data = {
       roles: ['admin', 'manager', 'engineer'],
     },
     {
-      title: 'Create Jobs',
+      title: 'Create Job',
       url: '/dashboard/new_jobs/create',
-      icon: Briefcase,
+      icon: PlusCircle,
       roles: ['admin'],
     },
     {
       title: 'Bids',
       url: '/dashboard/bids',
-      icon: Briefcase,
+      icon: Gavel,
       roles: ['admin'],
     },
     {
@@ -119,25 +121,25 @@ const new_data = {
     {
       title: 'Create Ticket',
       url: '/dashboard/tickets/create',
-      icon: Users,
+      icon: Ticket,
       roles: ['admin', 'manager', 'engineer'],
     },
     {
       title: 'Tickets',
       url: '/dashboard/tickets',
-      icon: Users,
+      icon: ClipboardList,
       roles: ['admin'],
     },
     {
       title: 'Submit Inspection',
       url: '/dashboard/inspection/create',
-      icon: Users,
+      icon: ClipboardCheck,
       roles: ['admin'],
     },
     {
       title: 'Inspections',
       url: '/dashboard/inspection',
-      icon: Users,
+      icon: ClipboardList,
       roles: ['admin'],
     },
     // {

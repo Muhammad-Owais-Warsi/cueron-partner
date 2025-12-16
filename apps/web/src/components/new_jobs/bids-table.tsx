@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '../ui/button';
 
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
@@ -126,6 +127,31 @@ export function BidsListView() {
       toast.error(err.message || 'Error loading bids');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedBid) return;
+
+    try {
+      const res = await fetch('/api/new/jobs/bids/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: selectedBid.user_id,
+          job_id: selectedBid.job_id,
+          bid_id: selectedBid.id,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to assign bid');
+
+      toast.success('Bid assigned successfully');
+      setSheetOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Assignment failed');
     }
   };
 
@@ -245,6 +271,16 @@ export function BidsListView() {
                   title="Applied On"
                   value={new Date(selectedBid.created_at).toLocaleString()}
                 />
+
+                <div className="mt-8 flex gap-3">
+                  <Button className="w-full" onClick={handleAssign}>
+                    Assign Bid
+                  </Button>
+
+                  <Button variant="outline" className="w-full" onClick={() => setSheetOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </>
           )}

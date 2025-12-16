@@ -7,8 +7,12 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('new_jobs')
-      .select('*')
+      .select(
+        'id, location, photos, assigned, price, equipment_type, equipment_sl_no, poc_name, poc_phone, poc_email,problem_statement, possible_solution, created_at'
+      )
       .order('created_at', { ascending: false });
+
+    console.log('DATA', data);
 
     if (error) {
       console.error(error);

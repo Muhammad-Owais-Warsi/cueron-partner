@@ -144,6 +144,7 @@ export function NewJobsListView() {
       if (!res.ok) throw new Error('Failed to load jobs');
 
       const data = await res.json();
+      console.log(data);
       setJobs(data.jobs ?? []);
     } catch (err: any) {
       toast.error(err.message || 'Error loading jobs');
@@ -312,9 +313,11 @@ export function NewJobsListView() {
 
                 <Separator />
 
-                <div className="flex justify-end">
-                  <Button onClick={() => setApplyOpen(true)}>Apply for Job</Button>
-                </div>
+                {!selectedJob.assigned && (
+                  <div className="flex justify-end">
+                    <Button onClick={() => setApplyOpen(true)}>Apply for Job</Button>
+                  </div>
+                )}
               </div>
             </>
           )}
