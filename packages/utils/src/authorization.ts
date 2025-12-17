@@ -59,7 +59,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'engineer:write',
     'job:read',
     'job:write',
-    'job:assign',
+    // 'job:assign',
     'payment:read',
     'analytics:read',
     'settings:read',

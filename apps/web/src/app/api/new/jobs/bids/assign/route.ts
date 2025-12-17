@@ -1,9 +1,49 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getUserSession } from '@/lib/auth/server';
+import { assertPermission } from '@cueron/utils';
+
+function errorResponse(
+  code: string,
+  message: string,
+  details?: Record<string, string[]>,
+  status: number = 400
+) {
+  return NextResponse.json(
+    {
+      error: {
+        code,
+        message,
+        details,
+        timestamp: new Date().toISOString(),
+        request_id: crypto.randomUUID(),
+      },
+    },
+    { status }
+  );
+}
 
 export async function POST(req: Request) {
   try {
     const { job_id, user_id, bid_id } = await req.json();
+
+    const session = await getUserSession();
+
+    if (!session) {
+      return errorResponse('UNAUTHORIZED', 'Authentication required', undefined, 401);
+    }
+
+    // // Prevent demo users from performing write operations
+    // const demoError = preventDemoUserWrites(session);
+    // if (demoError) return demoError;
+
+    // Check if user has permission to assign jobs
+    // Only admin and manager roles can assign jobs
+    try {
+      assertPermission(session.role, 'job:assign');
+    } catch (error: any) {
+      return errorResponse('FORBIDDEN', error.message, undefined, 403);
+    }
 
     if (!job_id || !user_id || !bid_id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
