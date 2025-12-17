@@ -1,3 +1,36 @@
+create table public.users (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  email character varying(255) not null,
+  role public.user_role null,
+  constraint users_pkey primary key (id),
+  constraint users_email_key unique (email)
+) TABLESPACE pg_default;
+
+create table public.tickets (
+  id uuid not null default gen_random_uuid (),
+  company_name text not null,
+  company_phone text not null,
+  company_email text not null,
+  brand_name text not null,
+  years_of_operation_in_equipment integer null,
+  location text not null,
+  inspection_date timestamp without time zone not null,
+  inspection_time timestamp without time zone not null,
+  photos text[] null,
+  gst text not null,
+  billing_address text not null,
+  equipment_type text not null,
+  equipment_sl_no text not null,
+  capacity integer null,
+  specification_plate_photo text null,
+  poc_name text not null,
+  poc_phone text not null,
+  poc_email text not null,
+  problem_statement text not null,
+  created_at timestamp with time zone null default now(),
+  constraint tickets_pkey primary key (id)
+) TABLESPACE pg_default;
+
 
 create table public.inspection (
   id uuid primary key default gen_random_uuid(),
@@ -55,30 +88,6 @@ create table public.new_jobs (
   constraint new_jobs_assigned_fkey foreign KEY (assigned) references users (id)
 ) TABLESPACE pg_default;
 
-create table public.tickets (
-  id uuid not null default gen_random_uuid (),
-  company_name text not null,
-  company_phone text not null,
-  company_email text not null,
-  brand_name text not null,
-  years_of_operation_in_equipment integer null,
-  location text not null,
-  inspection_date timestamp without time zone not null,
-  inspection_time timestamp without time zone not null,
-  photos text[] null,
-  gst text not null,
-  billing_address text not null,
-  equipment_type text not null,
-  equipment_sl_no text not null,
-  capacity integer null,
-  specification_plate_photo text null,
-  poc_name text not null,
-  poc_phone text not null,
-  poc_email text not null,
-  problem_statement text not null,
-  created_at timestamp with time zone null default now(),
-  constraint tickets_pkey primary key (id)
-) TABLESPACE pg_default;
 
 create table public.surveys (
   id uuid not null default extensions.uuid_generate_v4 (),
@@ -109,12 +118,4 @@ create table public.bids (
   constraint bids_job_user_unique unique (job_id, user_id),
   constraint bids_job_id_fkey foreign KEY (job_id) references new_jobs (id) on delete CASCADE,
   constraint bids_user_id_fkey foreign KEY (user_id) references users (id) on delete CASCADE
-) TABLESPACE pg_default;
-
-create table public.users (
-  id uuid not null default extensions.uuid_generate_v4 (),
-  email character varying(255) not null,
-  role public.user_role null,
-  constraint users_pkey primary key (id),
-  constraint users_email_key unique (email)
 ) TABLESPACE pg_default;
