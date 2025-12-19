@@ -15,13 +15,17 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
+import { useUserProfile } from '@/hooks';
 
 type UserRole = 'junior_engineer' | 'agency_engineer' | 'freelance_engineer';
 
 export default function CreateEngineerForm() {
   const [loading, setLoading] = useState(false);
 
+  const { user, loading: profileLoad } = useUserProfile();
+
   const [formData, setFormData] = useState({
+    id: user?.id,
     name: '',
     email: '',
     phone: '',
@@ -35,13 +39,21 @@ export default function CreateEngineerForm() {
   const isValid = formData.name && formData.email && formData.phone && formData.role;
 
   const submit = async () => {
+    if (!user) {
+      return;
+    }
     try {
       setLoading(true);
+
+      console.log('USER', user);
+
+      // Merge the user.id right here
+      const payload = { ...formData, id: user?.id };
 
       const res = await fetch('/api/new/engineers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -50,13 +62,17 @@ export default function CreateEngineerForm() {
       }
 
       toast.success('Engineer created successfully');
-      setFormData({ name: '', email: '', phone: '', role: '' as UserRole });
+      setFormData({ id: '', name: '', email: '', phone: '', role: '' as UserRole });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
+
+  if (profileLoad) {
+    return <Spinner />;
+  }
 
   return (
     <div className="max-w-xl mx-auto py-10">

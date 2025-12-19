@@ -18,6 +18,7 @@ const userRoleEnum = z.enum(['junior_engineer', 'agency_engineer', 'freelance_en
  * Validation schema
  */
 const newEngineerSchema = z.object({
+  id: z.string(),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Invalid email'),
   phone: z.string().min(8, 'Invalid phone number'),
@@ -56,6 +57,8 @@ export async function POST(request: NextRequest) {
       throw fetchError;
     }
 
+    console.log('EnG', engineer);
+
     if (existingEngineer) {
       return NextResponse.json(
         {
@@ -69,8 +72,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from('new_engineers')
+      .from('new_engineers_requests')
       .insert({
+        user_id: engineer.id,
         name: engineer.name,
         email: engineer.email,
         phone: engineer.phone,
