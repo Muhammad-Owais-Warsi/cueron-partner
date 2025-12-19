@@ -176,6 +176,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Spinner />;
   }
 
+  console.log('PROFILE', profile);
+
   const userRole = profile?.role ?? 'engineer';
 
   // ⭐ Filter nav items based on allowed roles

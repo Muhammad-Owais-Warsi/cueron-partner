@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const engineer = validation.data;
 
     const { data: existingEngineer, error: fetchError } = await supabase
-      .from('new_engineers')
+      .from('new_engineers_requests')
       .select('id')
       .or(`phone.eq.${engineer.phone},email.eq.${engineer.email}`)
       .maybeSingle();

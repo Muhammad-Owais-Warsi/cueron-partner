@@ -122,9 +122,7 @@ export default function CreateEngineerForm() {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">Admin (Cueron)</SelectItem>
                 <SelectItem value="junior_engineer">Junior Engineer</SelectItem>
-                <SelectItem value="agency_manager">Agency Manager</SelectItem>
                 <SelectItem value="agency_engineer">Agency Engineer</SelectItem>
                 <SelectItem value="freelance_engineer">Freelance Engineer</SelectItem>
               </SelectContent>
