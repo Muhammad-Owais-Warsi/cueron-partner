@@ -9,31 +9,39 @@ import Link from 'next/link';
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
+      <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          {/* Logo Section */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">C</span>
             </div>
-            <span className="text-xl font-semibold">Cueron Partner</span>
+            <span className="text-xl font-semibold tracking-tight">Cueron Partner</span>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <a
-              href="#features"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Features
-            </a>
-            <a
-              href="#about"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              About
-            </a>
-            <Button variant="outline" size="sm">
+
+          {/* Desktop & Mobile Actions */}
+          <div className="flex items-center gap-4">
+            {/* Desktop Links - Stays hidden on mobile */}
+            <nav className="hidden md:flex items-center space-x-6 mr-2">
+              <a
+                href="#features"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Features
+              </a>
+              <a
+                href="#about"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                About
+              </a>
+            </nav>
+
+            {/* Sign In Button - ALWAYS visible now */}
+            <Button variant="outline" size="sm" asChild>
               <Link href="/login">Sign In</Link>
             </Button>
-          </nav>
+          </div>
         </div>
       </header>
 
