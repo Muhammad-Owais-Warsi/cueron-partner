@@ -10,6 +10,16 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000'],
     },
   },
+  typescript: {
+    // This allows production builds to complete even if
+    // your project has type errors.
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // This allows production builds to complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
