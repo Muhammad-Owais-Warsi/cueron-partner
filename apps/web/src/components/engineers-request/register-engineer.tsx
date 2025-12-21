@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks';
+import { getUserSession } from '@/lib/auth/server';
 
 type UserRole = 'junior_engineer' | 'agency_engineer' | 'freelance_engineer';
 
@@ -23,6 +24,10 @@ export default function CreateEngineerForm() {
   const [loading, setLoading] = useState(false);
 
   const { user, loading: profileLoad } = useUserProfile();
+
+  // const { user: session } = ();
+
+  // cosnole.log('sss', session);
 
   const [formData, setFormData] = useState({
     id: user?.id,

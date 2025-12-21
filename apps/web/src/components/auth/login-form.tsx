@@ -71,7 +71,7 @@ export function LoginForm({ onEmailSent }: LoginFormProps) {
       await signUpWithEmailAndPassword(email, password);
 
       toast.success('Account created. Redirecting…');
-      router.push('/dashboard');
+      router.push('/engineer');
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Signup failed.');

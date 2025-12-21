@@ -120,7 +120,7 @@ const new_data = {
     },
     {
       title: 'Team',
-      url: '/dashboard/team',
+      url: '/dashboard/new_team',
       icon: Users,
       roles: ['manager'],
     },
