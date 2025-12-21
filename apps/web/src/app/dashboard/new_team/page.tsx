@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, List, MapPin } from 'lucide-react';
 import NewEngineersList from '@/components/new_team/engineer-table';
+import { AddNewEngineerDialog } from '@/components/new_team/add-engineer';
 
 type ViewMode = 'list' | 'map';
 
@@ -62,8 +63,8 @@ export default function TeamPage() {
         </div>
 
         <div className="flex gap-3">
-          <BulkUploadDialog agencyId={agencyId} />
-          <AddEngineerDialog agencyId={agencyId} />
+          {/*<BulkUploadDialog agencyId={agencyId} />*/}
+          <AddNewEngineerDialog agencyId={agencyId} />
         </div>
       </div>
 

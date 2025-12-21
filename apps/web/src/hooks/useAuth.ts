@@ -165,8 +165,6 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-
-
   useEffect(() => {
     if (!user) {
       setProfile(null);
@@ -184,8 +182,6 @@ export function useUserProfile() {
           .select(`email, role`)
           .eq('id', user.id)
           .single();
-
-  
 
         if (error || !data) {
           setProfile(null);
@@ -246,8 +242,6 @@ export function useUserProfile() {
 async function getEngineerProfile(user: any) {
   const supabase = createClient();
 
-
-
   const { data, error } = await supabase
     .from('new_engineers')
     .select(
@@ -288,8 +282,6 @@ async function getEngineerProfile(user: any) {
     agency, // ⭐ Now safely nullable
   };
 
-
-
   return profile;
 }
 
@@ -301,6 +293,9 @@ async function getAgencyManagerProfile(user: any) {
     .select(`id, name, contact_person, email, type, partnership_tier`)
     .eq('email', user.email)
     .single();
+
+  console.log('AGENCY', data);
+  console.log('USER_AGENCY', user);
 
   if (error || !data) {
     return;
