@@ -12,6 +12,7 @@ export type Permission =
   | 'agency:read'
   | 'agency:write'
   | 'agency:delete'
+  | 'engineer:create'
   | 'engineer:read'
   | 'engineer:write'
   | 'engineer:delete'
@@ -37,6 +38,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'agency:read',
     'agency:write',
     'agency:delete',
+    'engineer:create',
     'engineer:read',
     'engineer:write',
     'engineer:delete',

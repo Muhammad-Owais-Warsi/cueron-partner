@@ -38,6 +38,7 @@ export default function CreateEngineerForm() {
 
   const isValid = formData.name && formData.email && formData.phone && formData.role;
 
+  console.log('USER', user);
   const submit = async () => {
     if (!user) {
       return;
@@ -50,7 +51,7 @@ export default function CreateEngineerForm() {
       // Merge the user.id right here
       const payload = { ...formData, id: user?.id };
 
-      const res = await fetch('/api/new/engineers', {
+      const res = await fetch('/api/new/engineers/request/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
