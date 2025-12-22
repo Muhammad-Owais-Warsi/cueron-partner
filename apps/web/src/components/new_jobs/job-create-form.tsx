@@ -137,7 +137,7 @@ export default function CreateJobForm() {
     <div className="w-full px-6 py-8">
       <Card className="max-w-6xl">
         <CardHeader className="flex flex-row items-center gap-4 border-b">
-          <div className="p-2 rounded-lg bg-muted">
+          <div className="p-2 rounded-lg ">
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
