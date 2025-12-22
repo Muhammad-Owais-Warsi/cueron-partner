@@ -1,18 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
+import { LoginForm } from './auth';
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      {/* HEADER */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">C</span>
@@ -20,25 +22,16 @@ export default function Landing() {
             <span className="text-xl font-semibold">Cueron Partner</span>
           </div>
 
-          {/* Right side */}
           <div className="flex items-center gap-4">
-            {/* Desktop nav links */}
             <nav className="hidden md:flex items-center space-x-6">
-              <a
-                href="#features"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="#features" className="text-muted-foreground hover:text-foreground">
                 Features
               </a>
-              <a
-                href="#about"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <a href="#about" className="text-muted-foreground hover:text-foreground">
                 About
               </a>
             </nav>
 
-            {/* Sign In – visible on ALL screens */}
             <Button variant="outline" size="sm" asChild>
               <Link href="/login">Sign In</Link>
             </Button>
@@ -53,20 +46,20 @@ export default function Landing() {
             B2B HVAC Service Platform
           </Badge>
 
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Streamline Your HVAC Service Operations Across India
           </h1>
 
-          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+          <p className="text-xl text-muted-foreground mb-8">
             Connect agencies with skilled engineers, manage service requests efficiently, and grow
             your HVAC business with our comprehensive partner platform.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" asChild className="w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
               <Link href="/engineer">Become an Engineer</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" asChild>
               <Link href="/register">Create Agency</Link>
             </Button>
           </div>
@@ -103,7 +96,7 @@ export default function Landing() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <span>{icon}</span>
+                      {icon}
                     </div>
                     {title}
                   </CardTitle>
@@ -136,7 +129,6 @@ export default function Landing() {
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto">
           <Separator className="mb-8" />
-
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
             <p>© 2025 Cueron. All rights reserved.</p>
             <p>Built for the future of HVAC services in India</p>

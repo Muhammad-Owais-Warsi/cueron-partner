@@ -124,23 +124,11 @@ const new_data = {
       icon: Users,
       roles: ['manager'],
     },
-    // {
-    //   title: 'Create Ticket',
-    //   url: '/dashboard/tickets/create',
-    //   icon: Ticket,
-    //   roles: ['admin', 'engineer'],
-    // },
     {
       title: 'Tickets',
       url: '/dashboard/tickets',
       icon: ClipboardList,
       roles: ['manager'],
-    },
-    {
-      title: 'Submit Inspection',
-      url: '/dashboard/inspection/create',
-      icon: ClipboardCheck,
-      roles: ['admin'],
     },
     {
       title: 'Inspections',
