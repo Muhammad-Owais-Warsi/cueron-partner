@@ -21,7 +21,6 @@ export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [period, setPeriod] = useState<string>('6months');
 
-  // Fetch analytics data
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
     queryKey: ['analytics', profile?.agency?.id, period],
     queryFn: async () => {
