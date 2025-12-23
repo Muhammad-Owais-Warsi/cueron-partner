@@ -137,7 +137,7 @@ export async function getUserSession(): Promise<UserSession | null> {
 
   if (role === 'engineer') {
     const { data: engineer, error: engErr } = await supabase
-      .from('engineers')
+      .from('new_engineers')
       .select('id, agency_id')
       .eq('user_id', user.id)
       .single();

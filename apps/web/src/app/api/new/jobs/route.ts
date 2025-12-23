@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createAdminClient();
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('new_jobs')
-      .select(
-        'id, location, photos, assigned, price, equipment_type, equipment_sl_no, poc_name, poc_phone, poc_email,problem_statement, possible_solution, created_at'
-      )
+      .select('*')
       .order('created_at', { ascending: false });
 
     console.log('DATA', data);

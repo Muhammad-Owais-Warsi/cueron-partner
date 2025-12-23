@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
 
 const bidSchema = z.object({
@@ -18,16 +18,18 @@ export async function POST(req: NextRequest) {
     const user = await getUserSession();
 
     const body = await req.json();
-    const supabase = createAdminClient();
+    const supabase = createClient();
 
     const parsed = bidSchema.safeParse(body);
-
 
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
     const { job_id, name, email, phone, price } = parsed.data;
+
+    console.log(parsed.data);
+    console.log('USER', user);
 
     const { data, error } = await supabase
       .from('bids')

@@ -1,30 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createAdminClient();
+    const supabase = createClient();
     const user = await getUserSession();
 
-    /**
-     * Optional query params
-     * /api/bids?job_id=uuid
-     * /api/bids?user_id=uuid
-     */
-    const { searchParams } = new URL(req.url);
-    const jobId = searchParams.get('job_id');
-    const userId = searchParams.get('user_id') || user?.user_id;
 
-    let query = supabase.from('bids').select('*').order('created_at', { ascending: false });
 
-    if (jobId) {
-      query = query.eq('job_id', jobId);
-    }
+    const query = supabase.from('bids').select('*').order('created_at', { ascending: false });
 
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
 
     const { data, error } = await query;
 
