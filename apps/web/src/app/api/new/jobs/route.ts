@@ -8,7 +8,14 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('new_jobs')
-      .select('*')
+      .select(
+        `
+        *,
+        assigned:users (
+          email
+        )
+      `
+      )
       .order('created_at', { ascending: false });
 
     console.log('DATA', data);
