@@ -413,7 +413,6 @@ export function NewJobsListView() {
                 id="name"
                 value={applyForm.name}
                 onChange={(e) => handleApplyChange('name', e.target.value)}
-                placeholder="John Doe"
                 className="bg-muted/30 border-transparent focus:bg-background transition-all"
               />
             </div>
@@ -428,7 +427,6 @@ export function NewJobsListView() {
                   type="email"
                   value={applyForm.email}
                   onChange={(e) => handleApplyChange('email', e.target.value)}
-                  placeholder="john@example.com"
                   className="bg-muted/30 border-transparent focus:bg-background transition-all"
                 />
               </div>
@@ -440,7 +438,6 @@ export function NewJobsListView() {
                   id="phone"
                   value={applyForm.phone}
                   onChange={(e) => handleApplyChange('phone', e.target.value)}
-                  placeholder="+91 00000 00000"
                   className="bg-muted/30 border-transparent focus:bg-background transition-all"
                 />
               </div>
