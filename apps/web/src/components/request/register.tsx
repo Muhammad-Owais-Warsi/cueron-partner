@@ -15,51 +15,30 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
-import { useUserProfile } from '@/hooks';
-import { getUserSession } from '@/lib/auth/server';
 
-type UserRole = 'junior_engineer' | 'agency_engineer' | 'freelance_engineer';
-
-export default function CreateEngineerForm() {
+export default function CreateRegisterForm() {
   const [loading, setLoading] = useState(false);
 
-  const { user, loading: profileLoad } = useUserProfile();
-
-  // const { user: session } = ();
-
-  // cosnole.log('sss', session);
-
   const [formData, setFormData] = useState({
-    id: user?.id,
     name: '',
     email: '',
     phone: '',
-    role: '' as UserRole,
   });
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const isValid = formData.name && formData.email && formData.phone && formData.role;
+  const isValid = formData.name && formData.email && formData.phone;
 
-  console.log('USER', user);
   const submit = async () => {
-    if (!user) {
-      return;
-    }
     try {
       setLoading(true);
 
-      console.log('USER', user);
-
-      // Merge the user.id right here
-      const payload = { ...formData, id: user?.id };
-
-      const res = await fetch('/api/new/engineers/request/create', {
+      const res = await fetch('/api/new/request/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
@@ -68,7 +47,7 @@ export default function CreateEngineerForm() {
       }
 
       toast.success('Engineer created successfully');
-      setFormData({ id: '', name: '', email: '', phone: '', role: '' as UserRole });
+      setFormData({ id: '', name: '', email: '', phone: '' });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -76,12 +55,8 @@ export default function CreateEngineerForm() {
     }
   };
 
-  if (profileLoad) {
-    return <Spinner />;
-  }
-
   return (
-    <div className="max-w-xl mx-auto py-10">
+    <div className="max-w-xl mx-auto py-10 ">
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
           <div className="p-2 rounded-lg bg-slate-100">
@@ -134,24 +109,6 @@ export default function CreateEngineerForm() {
             />
           </div>
 
-          {/* Role */}
-          <div className="space-y-2">
-            <Label>
-              Role <span className="text-red-500">*</span>
-            </Label>
-            <Select value={formData.role} onValueChange={(v) => handleChange('role', v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="junior_engineer">Junior Engineer</SelectItem>
-                <SelectItem value="agency_engineer">Agency Engineer</SelectItem>
-                <SelectItem value="freelance_engineer">Freelance Engineer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Submit */}
           <Button className="w-full" onClick={submit} disabled={!isValid || loading}>
             {loading ? <Spinner /> : 'Create Engineer'}
           </Button>

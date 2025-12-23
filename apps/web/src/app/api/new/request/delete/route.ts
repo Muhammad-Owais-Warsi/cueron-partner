@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserSession } from '@/lib/auth/server';
-import { assertPermission } from '@cueron/utils';
 
-export async function GET() {
+export async function POST(req: Request) {
   try {
     const session = await getUserSession();
 
@@ -11,35 +10,30 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 🔐 Only admin / manager
-    // assertPermission(session.role, 'engineer:read');
+    // Optional: Add your permission check here
+    // await assertPermission(session, 'engineer.delete');
+
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Request ID is required' }, { status: 400 });
+    }
 
     const supabase = createClient();
 
-    const { data, error } = await supabase
-      .from('new_engineers_requests')
-      .select(
-        `
-        id,
-        user_id,
-        name,
-        email,
-        phone,
-        created_at
-      `
-      )
-      .order('created_at', { ascending: false });
+    const { error } = await supabase.from('requests').delete().eq('id', id);
 
     if (error) {
-      console.error(error);
-      return NextResponse.json({ error: 'Failed to fetch engineer requests' }, { status: 500 });
+      console.error('Supabase Delete Error:', error);
+      return NextResponse.json({ error: 'Failed to delete request' }, { status: 500 });
     }
 
     return NextResponse.json({
-      requests: data ?? [],
+      success: true,
+      message: 'Request deleted successfully',
     });
   } catch (err: any) {
-    console.error(err);
+    console.error('Delete Route Error:', err);
 
     if (err?.message?.includes('permission')) {
       return NextResponse.json({ error: err.message }, { status: 403 });

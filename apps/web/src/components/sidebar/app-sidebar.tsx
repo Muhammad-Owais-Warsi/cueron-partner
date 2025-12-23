@@ -113,8 +113,8 @@ const new_data = {
       roles: ['admin'],
     },
     {
-      title: 'Engineers Requests',
-      url: '/dashboard/engineer/table',
+      title: 'Requests',
+      url: '/dashboard/requests',
       icon: PlusCircle,
       roles: ['admin'],
     },

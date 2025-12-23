@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { LoginForm } from './auth';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function Landing() {
   return (
@@ -57,10 +58,12 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link href="/engineer">Become an Engineer</Link>
+              <Link href="/login">Get Started</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link href="/register">Create Agency</Link>
+              <Link href="/partner">
+                Become Partner <ArrowRight />
+              </Link>
             </Button>
           </div>
 
