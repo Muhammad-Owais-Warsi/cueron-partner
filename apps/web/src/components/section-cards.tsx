@@ -1,101 +1,117 @@
-import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
+'use client';
 
-import { Badge } from "@/components/ui/badge"
 import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  TrendingUpIcon,
+  TrendingDownIcon,
+  FileText,
+  ClipboardCheck,
+  Wallet,
+  Percent,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+
+/**
+ * Custom StatCard component to match the photo's style
+ */
+function StatCard({
+  title,
+  value,
+  trend,
+  trendValue,
+  description,
+  icon: Icon,
+  iconBg,
+  progressColor,
+  progressValue,
+}: any) {
+  return (
+    <Card className="border-none shadow-sm bg-white dark:bg-zinc-950">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <div className={`p-2 rounded-lg ${iconBg}`}>
+          <Icon className="size-4 text-primary-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-baseline gap-2">
+          <div className="text-2xl font-bold tracking-tight">{value}</div>
+          {trendValue && (
+            <div
+              className={`flex items-center text-xs font-medium ${trend === 'up' ? 'text-emerald-500' : 'text-orange-500'}`}
+            >
+              {trend === 'up' ? (
+                <TrendingUpIcon className="mr-1 size-3" />
+              ) : (
+                <TrendingDownIcon className="mr-1 size-3" />
+              )}
+              {trendValue}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">{description}</p>
+          {progressValue !== undefined && (
+            <div className="pt-2">
+              <Progress
+                value={progressValue}
+                className="h-1.5"
+                indicatorClassName={progressColor}
+              />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function SectionCards() {
   return (
-    <div className="*:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card lg:px-6">
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            $1,250.00
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +12.5%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            1,234
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingDownIcon className="size-3" />
-              -20%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <TrendingDownIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            45,678
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +12.5%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card">
-        <CardHeader className="relative">
-          <CardDescription>Growth Rate</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            4.5%
-          </CardTitle>
-          <div className="absolute right-4 top-4">
-            <Badge variant="outline" className="flex gap-1 rounded-lg text-xs">
-              <TrendingUpIcon className="size-3" />
-              +4.5%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
-        </CardFooter>
-      </Card>
+    <div className="grid grid-cols-1 gap-4 px-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 lg:px-6 bg-slate-50/50 py-6">
+      <StatCard
+        title="Active Bids"
+        value="24"
+        trend="up"
+        trendValue="+12%"
+        description="vs last week"
+        icon={FileText}
+        iconBg="bg-blue-100 dark:bg-blue-900"
+      />
+
+      <StatCard
+        title="Pending Approvals"
+        value="5"
+        description="Requires action today"
+        icon={ClipboardCheck}
+        iconBg="bg-amber-100 dark:bg-amber-900"
+      />
+
+      <StatCard
+        title="Total Spend YTD"
+        value="$1.2M"
+        trend="up"
+        trendValue="+5% vs last year"
+        description=""
+        icon={Wallet}
+        iconBg="bg-sky-100 dark:bg-sky-900"
+        progressValue={65}
+        progressColor="bg-blue-600"
+      />
+
+      <StatCard
+        title="Avg Savings"
+        value="12%"
+        trend="up"
+        trendValue="+2% vs target"
+        description=""
+        icon={Percent}
+        iconBg="bg-purple-100 dark:bg-purple-900"
+        progressValue={80}
+        progressColor="bg-purple-600"
+      />
     </div>
-  )
+  );
 }

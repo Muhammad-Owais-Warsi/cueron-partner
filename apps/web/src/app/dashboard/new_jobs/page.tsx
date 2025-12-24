@@ -1,22 +1,27 @@
 'use client';
 
-// Add dynamic = 'force-client' to prevent static generation issues
-export const dynamic = 'force-dynamic';
-
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { NewJobsListView } from '@/components/new_jobs/jobs-table';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
+
+export const dynamic = 'force-dynamic';
 
 function JobsContent() {
   return (
-    <div className="container mx-auto p-6 space-y-4 flex-1 px-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Jobs</h1>
-        <p className="text-muted-foreground mt-1">View and manage jobs.</p>
-
-        <div className="mt-5">
+    <div className="flex-1 flex flex-col min-h-screen bg-background">
+      <main className="container max-w-7xl mx-auto px-6 pb-12 space-y-6">
+        <div className="animate-in fade-in duration-500">
           <NewJobsListView />
         </div>
-      </div>
+      </main>
     </div>
   );
 }

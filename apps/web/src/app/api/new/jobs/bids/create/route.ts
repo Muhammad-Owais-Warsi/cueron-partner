@@ -10,7 +10,7 @@ const bidSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(8),
 
-  price: z.number().positive(),
+  price: z.string(),
 });
 
 export async function POST(req: NextRequest) {
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const supabase = createClient();
 
     const parsed = bidSchema.safeParse(body);
+    console.log(parsed.error);
 
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });

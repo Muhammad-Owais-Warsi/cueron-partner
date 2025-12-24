@@ -197,7 +197,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={filteredNav} />
-        <ThemeToggle variant="label" className="mt-auto" />
+        {/*<ThemeToggle variant="label" className="mt-auto" />*/}
       </SidebarContent>
 
       <SidebarFooter>

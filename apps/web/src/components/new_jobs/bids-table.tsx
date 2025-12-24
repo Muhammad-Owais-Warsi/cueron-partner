@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
+// Shadcn UI Imports
 import {
   Table,
   TableBody,
@@ -12,13 +13,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { User, Mail, Phone, Calendar, Briefcase, ArrowRight, CheckCircle2 } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+
+// Icons
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Briefcase,
+  ChevronRight,
+  CheckCircle2,
+  Info,
+  IndianRupee,
+  Timer,
+} from 'lucide-react';
 
 // Updated type to match your API response
 type Bid = {
@@ -30,8 +50,8 @@ type Bid = {
   phone: string;
   price: number;
   created_at: string;
-  is_job_assigned: boolean; // From your API
-  job_assigned_to: string | null; // From your API
+  is_job_assigned: boolean;
+  job_assigned_to: string | null;
 };
 
 export function BidsListView() {
@@ -40,82 +60,6 @@ export function BidsListView() {
   const [assigning, setAssigning] = useState(false);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  const columns: ColumnDef<Bid>[] = useMemo(
-    () => [
-      {
-        accessorKey: 'created_at',
-        header: 'Date',
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {new Date(row.original.created_at).toLocaleDateString('en-GB')}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'name',
-        header: 'Bidder',
-        cell: ({ row }) => (
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{row.original.name}</span>
-            <span className="text-[11px] text-muted-foreground">{row.original.phone}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'price',
-        header: 'Bid Price',
-        cell: ({ row }) => (
-          <span className="font-medium text-foreground">
-            ₹{row.original.price.toLocaleString()}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'is_job_assigned',
-        header: 'Status',
-        cell: ({ row }) => {
-          const isAssigned = row.original.is_job_assigned;
-          const isWinner = row.original.job_assigned_to === row.original.user_id;
-
-          if (isAssigned && isWinner) {
-            return (
-              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 font-normal">
-                Selected
-              </Badge>
-            );
-          }
-          if (isAssigned) {
-            return (
-              <Badge variant="outline" className="text-muted-foreground font-normal">
-                Closed
-              </Badge>
-            );
-          }
-          return (
-            <Badge variant="secondary" className="font-normal text-amber-700 bg-amber-50">
-              Pending
-            </Badge>
-          );
-        },
-      },
-      {
-        id: 'actions',
-        cell: () => <ArrowRight className="h-4 w-4 text-muted-foreground/30" />,
-      },
-    ],
-    []
-  );
-
-  const table = useReactTable({
-    data: bids,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  useEffect(() => {
-    loadBids();
-  }, []);
 
   const loadBids = async () => {
     try {
@@ -130,6 +74,10 @@ export function BidsListView() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadBids();
+  }, []);
 
   const handleAssign = async () => {
     if (!selectedBid) return;
@@ -147,7 +95,7 @@ export function BidsListView() {
       if (!res.ok) throw new Error('Failed to assign');
       toast.success('Bid assigned successfully');
       setSheetOpen(false);
-      loadBids(); // Refresh the list to update statuses
+      loadBids();
     } catch (err: any) {
       toast.error(err.message || 'Assignment failed');
     } finally {
@@ -155,24 +103,113 @@ export function BidsListView() {
     }
   };
 
+  const columns: ColumnDef<Bid>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'created_at',
+        header: 'Date',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-muted-foreground">
+              {new Date(row.original.created_at).toLocaleDateString('en-GB')}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'name',
+        header: 'Bidder',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="font-bold text-foreground leading-none mb-1">{row.original.name}</span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider italic">
+              {row.original.phone}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'price',
+        header: 'Bid Price',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1 text-sm font-bold text-foreground">
+            <IndianRupee className="h-3 w-3" />
+            {row.original.price.toLocaleString()}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+          const isAssigned = row.original.is_job_assigned;
+          const isWinner = row.original.job_assigned_to === row.original.user_id;
+
+          if (isAssigned && isWinner) {
+            return (
+              <Badge className="bg-emerald-500 hover:bg-emerald-600 rounded-md ring-1 ring-emerald-500/20">
+                <CheckCircle2 className="mr-1 h-3 w-3" /> Selected
+              </Badge>
+            );
+          }
+          if (isAssigned) {
+            return (
+              <Badge variant="secondary" className="rounded-md opacity-60">
+                Closed
+              </Badge>
+            );
+          }
+          return (
+            <Badge
+              variant="outline"
+              className="rounded-md border-amber-500/20 text-amber-600 bg-amber-50/50 uppercase text-[10px] font-bold"
+            >
+              <Timer className="mr-1 h-3 w-3" /> Pending
+            </Badge>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: () => (
+          <div className="flex justify-end">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: bids,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-2">
-        <Spinner className="h-6 w-6" />
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Loading Bids</p>
+      <div className="p-32 flex flex-col items-center gap-4">
+        <Spinner className="text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="rounded-md border overflow-hidden ">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-transparent border-b">
+              <TableRow key={hg.id}>
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id} className="h-10 text-xs font-semibold text-foreground">
+                  <TableHead
+                    key={header.id}
+                    className="text-[10px] font-bold uppercase tracking-widest py-3.5"
+                  >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -180,18 +217,18 @@ export function BidsListView() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer border-b last:border-0 "
+                  className="cursor-pointer hover:bg-muted/20"
                   onClick={() => {
                     setSelectedBid(row.original);
                     setSheetOpen(true);
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell key={cell.id} className="py-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -201,7 +238,7 @@ export function BidsListView() {
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-32 text-center text-muted-foreground text-sm"
+                  className="h-40 text-center text-muted-foreground italic"
                 >
                   No bids currently submitted.
                 </TableCell>
@@ -211,52 +248,60 @@ export function BidsListView() {
         </Table>
       </div>
 
+      {/* --- Details Sheet --- */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="p-0 flex flex-col w-full sm:max-w-[500px]">
+        <SheetContent className="sm:max-w-md overflow-y-auto border-l-border/60 shadow-2xl p-0 flex flex-col">
           {selectedBid && (
             <>
               <SheetHeader className="p-6 border-b shrink-0 text-left">
-                <div className="text-[10px] font-mono text-muted-foreground mb-1 uppercase tracking-tighter">
-                  BID ID: {selectedBid.id.split('-')[0]}
+                <div className="p-2 w-fit bg-primary/10 rounded-lg mb-2">
+                  <Info className="h-5 w-5 text-primary" />
                 </div>
-                <SheetTitle className="text-xl font-semibold">Bid Submission Details</SheetTitle>
+                <SheetTitle className="text-xl font-black uppercase tracking-tight">
+                  Bid Details
+                </SheetTitle>
+                <SheetDescription>Review the service partner's quote and profile.</SheetDescription>
               </SheetHeader>
 
               <ScrollArea className="flex-1 px-6">
-                <div className="py-6 space-y-8">
-                  <Section label="Bidder Profile">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full border bg-slate-50 flex items-center justify-center">
+                <div className="py-8 space-y-8">
+                  {/* Bidder Profile */}
+                  <Section label="Service Partner">
+                    <div className="flex items-center gap-4 p-4 bg-muted/20 rounded-xl border border-border/40">
+                      <div className="h-12 w-12 rounded-full border bg-background flex items-center justify-center">
                         <User className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-base font-medium">{selectedBid.name}</span>
-                        <span className="text-xs text-muted-foreground tracking-wide">
-                          Service Partner
+                        <span className="text-base font-black tracking-tight">
+                          {selectedBid.name}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase text-primary/60">
+                          Verified Partner
                         </span>
                       </div>
                     </div>
                   </Section>
 
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                  {/* Contact Info */}
+                  <div className="grid grid-cols-1 gap-3">
                     <DataBlock
-                      icon={<Mail className="h-4 w-4" />}
-                      label="Email"
+                      icon={<Mail className="h-4 w-4 text-muted-foreground" />}
+                      label="Email Address"
                       value={selectedBid.email}
                     />
                     <DataBlock
-                      icon={<Phone className="h-4 w-4" />}
-                      label="Phone"
+                      icon={<Phone className="h-4 w-4 text-muted-foreground" />}
+                      label="Phone Number"
                       value={selectedBid.phone}
                     />
                     <DataBlock
-                      icon={<Calendar className="h-4 w-4" />}
-                      label="Applied On"
+                      icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+                      label="Submission Date"
                       value={new Date(selectedBid.created_at).toLocaleDateString()}
                     />
                     <DataBlock
-                      icon={<Briefcase className="h-4 w-4" />}
-                      label="Job Reference"
+                      icon={<Briefcase className="h-4 w-4 text-muted-foreground" />}
+                      label="Reference ID"
                       value={`#${selectedBid.job_id.split('-')[0]}`}
                     />
                   </div>
@@ -264,9 +309,9 @@ export function BidsListView() {
                   <Separator />
 
                   {selectedBid.is_job_assigned && (
-                    <div className="flex items-center gap-2 p-3 rounded-md bg-slate-50 text-slate-600 border border-slate-200">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="text-xs font-medium">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+                      <CheckCircle2 className="h-5 w-5 shrink-0" />
+                      <span className="text-xs font-bold uppercase tracking-tight">
                         This job has already been assigned.
                       </span>
                     </div>
@@ -274,27 +319,26 @@ export function BidsListView() {
                 </div>
               </ScrollArea>
 
-              <div className="p-6 border-t shrink-0 ">
+              {/* Sticky Footer */}
+              <div className="p-6 border-t bg-background shrink-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+                    <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
                       Quoted Amount
                     </span>
-                    <span className="text-xl font-semibold text-foreground">
-                      ₹{selectedBid.price.toLocaleString()}
+                    <span className="text-2xl font-black text-primary flex items-center">
+                      <IndianRupee className="h-5 w-5 mr-0.5" />
+                      {selectedBid.price.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                      Cancel
-                    </Button>
                     <Button
+                      className="font-black uppercase text-[10px] tracking-widest px-8 h-12 shadow-lg shadow-primary/20"
                       onClick={handleAssign}
                       disabled={assigning || selectedBid.is_job_assigned}
-                      className="px-6 min-w-[140px]"
                     >
                       {assigning ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                      {selectedBid.is_job_assigned ? 'Job Assigned' : 'Assign Partner'}
+                      {selectedBid.is_job_assigned ? 'Assigned' : 'Assign Partner'}
                     </Button>
                   </div>
                 </div>
@@ -307,11 +351,11 @@ export function BidsListView() {
   );
 }
 
-// Sub-components as defined before
+// Sub-components
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
-      <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
+      <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
         {label}
       </h3>
       {children}
@@ -329,12 +373,14 @@ function DataBlock({
   value: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        {icon}
-        <span className="text-[10px] font-bold uppercase tracking-wider leading-none">{label}</span>
+    <div className="flex items-center gap-3 p-3 bg-background border rounded-lg hover:border-primary/30 transition-colors">
+      <div className="p-2 bg-muted/40 rounded-md">{icon}</div>
+      <div>
+        <p className="text-[10px] uppercase text-muted-foreground font-bold leading-none mb-1">
+          {label}
+        </p>
+        <p className="text-sm font-bold tracking-tight">{value}</p>
       </div>
-      <p className="text-sm font-medium truncate">{value}</p>
     </div>
   );
 }
