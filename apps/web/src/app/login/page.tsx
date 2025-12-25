@@ -10,14 +10,12 @@ export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
 
-  // Show loading while checking auth
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -28,7 +26,6 @@ export default function LoginPage() {
     );
   }
 
-  // Don't render if already authenticated
   if (user) {
     return null;
   }

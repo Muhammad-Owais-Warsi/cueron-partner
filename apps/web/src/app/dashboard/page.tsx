@@ -1,30 +1,63 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Search,
-  Bell,
-  MessageSquare,
-  Plus,
-  TrendingUp,
   FileText,
   ClipboardCheck,
-  Wallet,
-  Percent,
+  Users,
+  Database,
+  LayoutDashboard,
+  ArrowRight,
   MoreHorizontal,
 } from 'lucide-react';
+
+// Shadcn UI Components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+// Charting
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
 import { useUserProfile } from '@/hooks';
 import { Spinner } from '@/components/ui/spinner';
 
-// --- Sub-components to build the layout ---
+// --- Mock Chart Data (To be replaced by API timelines later) ---
+const chartData = [
+  { name: 'Mon', jobs: 4 },
+  { name: 'Tue', jobs: 7 },
+  { name: 'Wed', jobs: 5 },
+  { name: 'Thu', jobs: 12 },
+  { name: 'Fri', jobs: 8 },
+  { name: 'Sat', jobs: 2 },
+  { name: 'Sun', jobs: 3 },
+];
 
-function StatCard({ title, value, trend, sub, icon: Icon, iconBg, progress }: any) {
+// --- Reusable StatCard ---
+function StatCard({ title, value, sub, icon: Icon, iconBg }: any) {
   return (
     <Card className="border-none shadow-sm outline outline-1 outline-slate-200">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -38,170 +71,169 @@ function StatCard({ title, value, trend, sub, icon: Icon, iconBg, progress }: an
       <CardContent>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold tracking-tight text-slate-900">{value}</span>
-          {trend && (
-            <Badge
-              variant="secondary"
-              className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-bold"
-            >
-              <TrendingUp className="mr-1 size-3" /> {trend}
-            </Badge>
-          )}
         </div>
         <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>
-        {progress && (
-          <Progress
-            value={progress.val}
-            className="h-1.5 mt-4"
-            indicatorClassName={progress.color}
-          />
-        )}
       </CardContent>
     </Card>
   );
 }
 
 export default function DashboardPage() {
-  const { profile, loading } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
+  const [stats, setStats] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  if (loading) {
-    return <Spinner />;
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await fetch('/api/new/admin');
+        const data = await response.json();
+        setStats(data.stats);
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats', error);
+      } finally {
+        setDataLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  if (profileLoading || dataLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-white">
+        <Spinner />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-12">
       <main className="max-w-[1600px] mx-auto p-8 space-y-8">
-        {/* 2. WELCOME BAR */}
+        {/* 1. HEADER SECTION */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              Welcome back, {profile?.role}
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight capitalize">
+              Dashboard Overview
             </h1>
             <p className="text-slate-500 mt-1">
-              Overview of your procurement activities and pending actions.
+              Logged in as{' '}
+              <span className="font-semibold text-slate-700">{profile?.role || 'Admin'}</span>
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 px-6 font-semibold shadow-md shadow-blue-100">
-            <Plus className="mr-2 size-4" /> Create New Bid
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline">Settings</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <LayoutDashboard className="mr-2 size-4" /> Export Data
+            </Button>
+          </div>
         </div>
 
-        {/* 3. METRIC CARDS GRID */}
+        {/* 2. TOP METRICS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Active Bids"
-            value="24"
-            trend="+12%"
-            sub="vs last week"
+            title="Open Jobs"
+            value={stats?.openJobs || 0}
+            sub="Awaiting assignment"
             icon={FileText}
             iconBg="bg-blue-50"
           />
           <StatCard
-            title="Pending Approvals"
-            value="5"
-            sub="Requires action today"
-            icon={ClipboardCheck}
+            title="New Requests"
+            value={stats?.totalRequests || 0}
+            sub="Partners pending review"
+            icon={Users}
             iconBg="bg-amber-50"
           />
           <StatCard
-            title="Total Spend YTD"
-            value="$1.2M"
-            trend="+5%"
-            sub="vs last year"
-            icon={Wallet}
+            title="Agencies"
+            value={stats?.totalAgencies || 0}
+            sub="Verified partners"
+            icon={Database}
             iconBg="bg-sky-50"
-            progress={{ val: 65, color: 'bg-blue-600' }}
           />
           <StatCard
-            title="Avg Savings"
-            value="12%"
-            trend="+2%"
-            sub="vs target"
-            icon={Percent}
+            title="Total Surveys"
+            value={stats?.totalSurveys || 0}
+            sub="Field feedback reports"
+            icon={ClipboardCheck}
             iconBg="bg-purple-50"
-            progress={{ val: 80, color: 'bg-purple-600' }}
           />
         </div>
 
-        {/* 4. CHART AND CATEGORY GRID (3:1 Ratio) */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+        {/* 3. CHART & MARKET SHARE */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <Card className="lg:col-span-3 border-none shadow-sm outline outline-1 outline-slate-200">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold">Bid Activity Over Time (Q3)</CardTitle>
-                <CardDescription>High activity volume recorded in recent months</CardDescription>
-              </div>
-              <Badge
-                variant="outline"
-                className="text-emerald-600 bg-emerald-50 border-none font-bold"
-              >
-                +15% Growth
-              </Badge>
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">Market Activity</CardTitle>
+              <CardDescription>Daily job creation volume</CardDescription>
             </CardHeader>
-            <CardContent className="h-[300px] flex items-center justify-center text-slate-400 italic">
-              {/* Replace with your ChartAreaInteractive component */}
-              [Interactive Chart Area]
+            <CardContent className="h-[300px] w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                  />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="jobs"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorJobs)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <Card className="lg:col-span-1 border-none shadow-sm outline outline-1 outline-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Spend by Category</CardTitle>
-              <CardDescription>YTD distribution breakdown</CardDescription>
+              <CardTitle className="text-lg font-bold">Distribution</CardTitle>
+              <CardDescription>Records by Type</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
-                { label: 'Raw Materials', val: 45, color: 'bg-blue-600' },
-                { label: 'IT Infrastructure', val: 28, color: 'bg-indigo-500' },
-                { label: 'Logistics', val: 18, color: 'bg-teal-500' },
-                { label: 'Services', val: 9, color: 'bg-orange-400' },
-              ].map((item) => (
-                <div key={item.label} className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
-                    <span>{item.label}</span>
-                    <span>{item.val}%</span>
+                { label: 'Jobs', val: stats?.totalJobs, color: 'bg-blue-600' },
+                { label: 'Agencies', val: stats?.totalAgencies, color: 'bg-indigo-500' },
+                { label: 'Surveys', val: stats?.totalSurveys, color: 'bg-teal-500' },
+              ].map((item) => {
+                const total =
+                  (stats?.totalJobs || 0) +
+                  (stats?.totalAgencies || 0) +
+                  (stats?.totalSurveys || 0);
+                const percentage = total > 0 ? Math.round((item.val / total) * 100) : 0;
+                return (
+                  <div key={item.label} className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-700">
+                      <span>{item.label}</span>
+                      <span>{percentage}%</span>
+                    </div>
+                    <Progress
+                      value={percentage}
+                      className="h-1.5"
+                      indicatorClassName={item.color}
+                    />
                   </div>
-                  <Progress value={item.val} className="h-1.5" indicatorClassName={item.color} />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 5. BOTTOM TABLE SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <Card className="lg:col-span-3 border-none shadow-sm outline outline-1 outline-slate-200 overflow-hidden">
-            <div className="p-6 border-b flex justify-between items-center">
-              <h3 className="font-bold text-lg">Pending Approvals</h3>
-              <Button variant="link" className="text-blue-600 font-bold p-0">
-                View All
-              </Button>
-            </div>
-            <div className="p-0">
-              {/* Placeholder for your DataTable component */}
-              <div className="h-48 flex items-center justify-center text-slate-400">
-                [Data Table Content]
-              </div>
-            </div>
-          </Card>
-
-          <Card className="lg:col-span-1 border-none shadow-sm outline outline-1 outline-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold">Live Auctions</CardTitle>
-              <CardDescription>Real-time status of open bids</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-bold text-sm text-slate-800">Office Expansion Project</h4>
-                  <Badge className="bg-emerald-100 text-emerald-700 border-none text-[10px] font-black">
-                    ACTIVE
-                  </Badge>
-                </div>
-                <div className="mt-4 flex justify-between items-end">
-                  <span className="text-[11px] text-slate-500">Ends in 2h 15m</span>
-                  <span className="text-sm font-bold text-slate-900">14 Bids</span>
-                </div>
-              </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
