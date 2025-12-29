@@ -291,7 +291,7 @@ export default function RegisterAgency() {
         pan_number: formData.pan_number || ' ',
       };
       console.log('Payload:', payload);
-      const res = await fetch(`/api/agencies/register`, {
+      const res = await fetch(`/api/new/create/agency`, {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
