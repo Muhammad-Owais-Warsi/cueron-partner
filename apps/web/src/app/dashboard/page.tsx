@@ -12,7 +12,6 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
-// Shadcn UI Components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,7 +25,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-// Charting
 import {
   AreaChart,
   Area,
@@ -103,7 +101,7 @@ export default function DashboardPage() {
           response = await fetch('/api/new/admin');
         } else if (role === 'manager') {
           // MANDATE: Check for agency_id before calling API
-          if (!profile?.agency.id) {
+          if (!profile?.agency?.id) {
             throw new Error('No agency associated with this manager account.');
           }
 
@@ -111,7 +109,7 @@ export default function DashboardPage() {
           response = await fetch('/api/new/manager', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agency_id: profile.agency.id }),
+            body: JSON.stringify({ agency_id: profile.agency?.id }),
           });
         } else {
           setDataLoading(false);
@@ -131,7 +129,7 @@ export default function DashboardPage() {
     }
 
     fetchStats();
-  }, [role, profileLoading, profile?.agency.id]);
+  }, [role, profileLoading, profile?.agency?.id]);
 
   if (profileLoading || dataLoading) {
     return (

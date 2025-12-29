@@ -119,6 +119,12 @@ const new_data = {
       roles: ['admin'],
     },
     {
+      title: 'Create User',
+      url: '/dashboard/create-user',
+      icon: PlusCircle,
+      roles: ['admin'],
+    },
+    {
       title: 'Team',
       url: '/dashboard/new_team',
       icon: Users,
