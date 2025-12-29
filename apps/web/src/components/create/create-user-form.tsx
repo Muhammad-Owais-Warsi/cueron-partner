@@ -14,7 +14,6 @@ import {
 import { toast } from 'sonner';
 
 export default function CreateUserForm() {
-  // Manual state management
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -46,16 +45,15 @@ export default function CreateUserForm() {
         body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error('Failed to create user');
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error?.message || 'Failed to create user');
+      }
 
-      const data = await res.json();
-      console.log(data);
       toast.success('User created successfully!');
-
-      // Optional: Reset form
       setFormData({ name: '', email: '', phone: '', role: 'engineer' });
-    } catch (error) {
-      toast.error('Something went wrong');
+    } catch (error: any) {
+      toast.error(error.message || 'Something went wrong');
       console.error(error);
     } finally {
       setLoading(false);
@@ -63,61 +61,72 @@ export default function CreateUserForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6 max-w-md">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          name="name"
-          placeholder="Enter name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+    <div className="w-full max-w-md mx-auto pt-4 space-y-4">
+      {/* Reduced vertical spacing and removed heavy bottom margins */}
+      <div className="text-center space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">Engineer Registration</h1>
+        <p className="text-sm text-muted-foreground">Register a new account in the system.</p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="user@example.com"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-      </div>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            name="name"
+            placeholder="Enter name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="h-9" // Slightly shorter inputs
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone</Label>
-        <Input
-          id="phone"
-          name="phone"
-          placeholder="Optional"
-          value={formData.phone}
-          onChange={handleChange}
-        />
-      </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="user@example.com"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="h-9"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
-        <Select value={formData.role} onValueChange={handleRoleChange}>
-          <SelectTrigger id="role">
-            <SelectValue placeholder="Select role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="engineer">Engineer</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            name="phone"
+            placeholder="Optional"
+            value={formData.phone}
+            onChange={handleChange}
+            className="h-9"
+          />
+        </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Creating...' : 'Create User'}
-      </Button>
-    </form>
+        <div className="space-y-1.5">
+          <Label htmlFor="role">Role</Label>
+          <Select value={formData.role} onValueChange={handleRoleChange}>
+            <SelectTrigger id="role" className="h-9">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="engineer">Engineer</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button type="submit" className="w-full mt-2" disabled={loading}>
+          {loading ? 'Creating...' : 'Create User'}
+        </Button>
+      </form>
+    </div>
   );
 }
