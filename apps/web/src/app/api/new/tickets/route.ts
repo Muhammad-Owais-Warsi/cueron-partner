@@ -1,6 +1,5 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
-import { createClient } from '@/lib/supabase/client';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,10 +7,10 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('tickets')
-      .select('*')
+      .select()
       .order('created_at', { ascending: false });
 
-    console.log(data);
+    console.log(data, data.length);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
