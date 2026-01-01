@@ -160,12 +160,12 @@ const new_data = {
     //   icon: CreditCard,
     //   roles: ['manager', 'engineer'],
     // },
-    // {
-    //   title: 'Submit Survey',
-    //   url: '/dashboard/surveys/create',
-    //   icon: Plus,
-    //   roles: ['admin', 'engineer'],
-    // },
+    {
+      title: 'Tickets',
+      url: '/dashboard/tickets',
+      icon: Plus,
+      roles: ['admin'],
+    },
     // {
     //   title: 'Surveys',
     //   url: '/dashboard/surveys',

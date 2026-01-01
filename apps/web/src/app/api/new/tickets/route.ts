@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createAdminClient();
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('tickets')
       .select('*')
       .order('created_at', { ascending: false });
+
+    console.log(data);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
